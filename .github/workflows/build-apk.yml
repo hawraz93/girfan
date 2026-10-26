@@ -57,7 +57,13 @@ jobs:
       - name: Set up release signing
         if: env.KEYSTORE_B64 != ''
         run: |
-          echo "$KEYSTORE_B64" | base64 --decode > android/app/upload-keystore.jks
+          # Pasting from a phone can add spaces or line breaks; drop them.
+          printf '%s' "$KEYSTORE_B64" | tr -d ' \r\n\t' | base64 --decode --ignore-garbage > android/app/upload-keystore.jks
+          if ! keytool -list -keystore android/app/upload-keystore.jks \
+               -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" -alias "${{ secrets.ANDROID_KEY_ALIAS }}" > /dev/null; then
+            echo "::error::Keystore could not be opened: check ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD and ANDROID_KEY_ALIAS."
+            exit 1
+          fi
           cat > android/key.properties <<EOF
           storeFile=upload-keystore.jks
           storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
