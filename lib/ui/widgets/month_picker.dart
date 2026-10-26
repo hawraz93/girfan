@@ -63,7 +63,7 @@ class _MonthSheetState extends State<_MonthSheet> {
             children: [
               for (var m = 1; m <= 12; m++)
                 _MonthCell(
-                  label: kurdishMonths[m - 1],
+                  label: monthNames == MonthNames.number ? '$m' : '$m · ${monthNameShort(m)}',
                   selected: cur.year == year && cur.month == m,
                   isNow: now.year == year && now.month == m,
                   onTap: () => Navigator.pop(context, '$year-${two(m)}'),

@@ -100,6 +100,11 @@ void main() {
     await tester.tap(key('000'));
     await tester.pump();
     await shot(tester, '05-add-expense-dark');
+    await tester.tap(find.text(S.pickDate));
+    await tester.pumpAndSettle();
+    await shot(tester, '05b-day-picker-dark');
+    await tester.tap(find.text(S.cancel).last);
+    await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.close_rounded));
     await tester.pumpAndSettle();
 

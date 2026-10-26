@@ -162,4 +162,12 @@ class S {
   static const updCheck = 'پشکنینی نوێکردنەوە';
   static const updLatest = 'نوێترین وەشانت هەیە';
   static const version = 'وەشان';
+
+  // Month style & date picker
+  static const monthStyle = 'شێوازی مانگ';
+  static const msNumber = 'ژمارە';
+  static const msKurdish = 'کوردی';
+  static const msArabic = 'عەرەبی';
+  static const example = 'نموونە';
+  static const pickDay = 'بەروار هەڵبژێرە';
 }

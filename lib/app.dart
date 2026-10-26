@@ -29,8 +29,11 @@ class MasrufApp extends ConsumerWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      builder: (context, child) =>
-          Directionality(textDirection: TextDirection.rtl, child: child!),
+      // Keyed on the month style so every date label redraws when it changes.
+      builder: (context, child) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: KeyedSubtree(key: ValueKey(s.monthNames), child: child!),
+      ),
       home: const _Gate(),
     );
   }

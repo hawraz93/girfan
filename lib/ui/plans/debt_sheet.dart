@@ -6,6 +6,7 @@ import '../../core/strings.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../state/providers.dart';
+import '../widgets/day_picker.dart';
 import '../widgets/widgets.dart';
 
 Future<void> showDebtSheet(BuildContext context, {Debt? existing}) => showModalBottomSheet(
@@ -22,12 +23,8 @@ Future<void> showDebtDetail(BuildContext context, int debtId) => showModalBottom
       builder: (_) => DebtDetailSheet(debtId: debtId),
     );
 
-Future<DateTime?> _pickDay(BuildContext context, DateTime initial) => showDatePicker(
-      context: context,
-      initialDate: initial,
-      firstDate: DateTime(2015),
-      lastDate: DateTime.now().add(const Duration(days: 365 * 10)),
-    );
+Future<DateTime?> _pickDay(BuildContext context, DateTime initial) =>
+    showDayPicker(context, initial: initial);
 
 /// Create or edit a debt.
 class DebtSheet extends ConsumerStatefulWidget {

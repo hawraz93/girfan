@@ -10,6 +10,7 @@ import '../../core/strings.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../state/providers.dart';
+import '../widgets/day_picker.dart';
 import '../widgets/widgets.dart';
 
 /// Opens the add / edit sheet. Pass [fromRecurring] + [period] to record a
@@ -131,11 +132,12 @@ class _TxSheetState extends ConsumerState<TxSheet> {
   }
 
   Future<void> _pickDate() async {
-    final d = await showDatePicker(
-      context: context,
-      initialDate: date,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+    noteFocus.unfocus();
+    final d = await showDayPicker(
+      context,
+      initial: date,
+      first: DateTime(2020),
+      last: DateTime.now().add(const Duration(days: 365)),
     );
     if (d != null) setState(() => date = d);
   }

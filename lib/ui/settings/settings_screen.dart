@@ -117,6 +117,28 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               ),
             ]),
+            _Group(S.monthStyle, [
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _Segmented(
+                      options: const ['number', 'kurdish', 'arabic', 'english'],
+                      labels: const [S.msNumber, S.msKurdish, S.msArabic, 'English'],
+                      value: s.monthNames.name,
+                      expand: true,
+                      onChanged: (v) => n.setMonthNames(MonthNames.values.byName(v)),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      '${S.example}: ${monthLabel(currentMonth())} · ${dateLabel(dateKey(DateTime.now().subtract(const Duration(days: 3))))}',
+                      style: TextStyle(color: p.muted, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ]),
             _Group(S.data, [
               _Tile(
                 icon: Icons.ios_share_rounded,
