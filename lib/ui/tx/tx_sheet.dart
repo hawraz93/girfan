@@ -251,7 +251,7 @@ class _TxSheetState extends ConsumerState<TxSheet> {
                     const SizedBox(height: 22),
                     // Amount
                     GestureDetector(
-                      onTap: _toggleCurrency,
+                      onTap: noteFocus.unfocus,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -273,7 +273,9 @@ class _TxSheetState extends ConsumerState<TxSheet> {
                             ),
                           ),
                           const SizedBox(width: 10),
-                          Container(
+                          GestureDetector(
+                            onTap: _toggleCurrency,
+                            child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                             decoration: BoxDecoration(
                               color: p.surface2,
@@ -289,6 +291,7 @@ class _TxSheetState extends ConsumerState<TxSheet> {
                                 Icon(Icons.swap_horiz_rounded, size: 16, color: p.muted),
                               ],
                             ),
+                          ),
                           ),
                         ],
                       ),
@@ -307,7 +310,10 @@ class _TxSheetState extends ConsumerState<TxSheet> {
                         itemBuilder: (_, i) => _CatChip(
                           cats[i],
                           selected: cats[i].id == effectiveCat,
-                          onTap: () => setState(() => categoryId = cats[i].id),
+                          onTap: () {
+                            noteFocus.unfocus();
+                            setState(() => categoryId = cats[i].id);
+                          },
                         ),
                       ),
                     ),
@@ -340,6 +346,7 @@ class _TxSheetState extends ConsumerState<TxSheet> {
                       controller: note,
                       focusNode: noteFocus,
                       textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => noteFocus.unfocus(),
                       decoration: InputDecoration(
                         hintText: S.noteHint,
                         prefixIcon: Icon(Icons.notes_rounded, color: p.muted, size: 20),
@@ -350,6 +357,32 @@ class _TxSheetState extends ConsumerState<TxSheet> {
                 ),
               ),
             ),
+            if (!showKeypad)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                child: Material(
+                  color: p.surface2,
+                  borderRadius: BorderRadius.circular(16),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: noteFocus.unfocus,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      child: Row(
+                        children: [
+                          Icon(Icons.dialpad_rounded, size: 20, color: p.accent),
+                          const SizedBox(width: 10),
+                          Text(S.amount, style: TextStyle(color: p.muted, fontSize: 13)),
+                          const Spacer(),
+                          Text('$_display $currency',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w800, fontSize: 16, fontFeatures: kTabular)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             if (showKeypad)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),

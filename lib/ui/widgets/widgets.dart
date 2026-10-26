@@ -444,7 +444,7 @@ class AmountField extends StatelessWidget {
       controller: controller,
       autofocus: autofocus,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
+      inputFormatters: [ThousandsFormatter(decimals: currency == 'USD' ? 2 : 0)],
       style: const TextStyle(fontFeatures: kTabular, fontWeight: FontWeight.w700, fontSize: 17),
       onChanged: onChanged,
       decoration: InputDecoration(
@@ -454,6 +454,46 @@ class AmountField extends StatelessWidget {
           child: Text(currency, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
         ),
       ),
+    );
+  }
+}
+
+/// Groups digits as they are typed: 80000 -> 80,000. Allows [decimals]
+/// digits after a single dot (0 = whole numbers only).
+class ThousandsFormatter extends TextInputFormatter {
+  final int decimals;
+  const ThousandsFormatter({this.decimals = 0});
+
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    // Accept Arabic-Indic digits from Kurdish keyboards too.
+    const eastern = '٠١٢٣٤٥٦٧٨٩';
+    var t = newValue.text;
+    for (var i = 0; i < 10; i++) {
+      t = t.replaceAll(eastern[i], '$i');
+    }
+    t = t.replaceAll(RegExp(r'[^0-9.]'), '');
+    var intPart = t, frac = '';
+    final dot = t.indexOf('.');
+    if (dot >= 0) {
+      intPart = t.substring(0, dot);
+      frac = t.substring(dot + 1).replaceAll('.', '');
+    }
+    intPart = intPart.replaceFirst(RegExp(r'^0+(?=\d)'), '');
+    if (intPart.length > 12) return oldValue;
+    final grouped = StringBuffer();
+    for (var i = 0; i < intPart.length; i++) {
+      if (i > 0 && (intPart.length - i) % 3 == 0) grouped.write(',');
+      grouped.write(intPart[i]);
+    }
+    var out = grouped.toString();
+    if (decimals > 0 && dot >= 0) {
+      if (frac.length > decimals) frac = frac.substring(0, decimals);
+      out = '${out.isEmpty ? '0' : out}.$frac';
+    }
+    return TextEditingValue(
+      text: out,
+      selection: TextSelection.collapsed(offset: out.length),
     );
   }
 }

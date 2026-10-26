@@ -34,6 +34,32 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
   final day = TextEditingController();
   final note = TextEditingController();
   int? categoryId;
+
+  /// True once the user picked a category themselves; until then the
+  /// category follows the name (کرێ -> خانوو, سلفە -> قیست...).
+  bool pickedCategory = false;
+
+  static const _nameHints = {
+    'خانوو': ['کرێ', 'خانوو', 'شوقە'],
+    'قیست و سلفە': ['سلفە', 'قیست', 'قەرز', 'بانک'],
+    'مۆبایل و ئینتەرنێت': ['ئینتەرنێت', 'انترنت', 'کارت', 'مۆبایل', 'باقە'],
+    'سەیارە': ['سەیارە', 'ئۆتۆمبێل', 'بەنزین'],
+    'پەروەردە': ['قوتابخانە', 'زانکۆ', 'خوێندن', 'کۆرس'],
+    'تەندروستی': ['دکتۆر', 'دەرمان', 'نەخۆش'],
+    'موچە': ['موچە', 'مووچە', 'معاش'],
+  };
+
+  void _suggestCategory(List<Category> all) {
+    if (pickedCategory) return;
+    final n = name.text;
+    for (final e in _nameHints.entries) {
+      if (e.value.any(n.contains)) {
+        final match = all.where((c) => c.kind == kind && !c.archived && c.name == e.key).firstOrNull;
+        if (match != null) setState(() => categoryId = match.id);
+        return;
+      }
+    }
+  }
   late String startMonth;
   bool hasEnd = false;
   late String endMonth;
@@ -50,10 +76,11 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
       kind = e.kind;
       currency = e.currency;
       name.text = e.name;
-      amount.text = moneyNumber(e.amount, e.currency).replaceAll(',', '');
+      amount.text = moneyNumber(e.amount, e.currency);
       day.text = '${e.dayOfMonth}';
       note.text = e.note;
       categoryId = e.categoryId;
+      pickedCategory = true;
       startMonth = e.startMonth;
       hasEnd = e.endMonth != null;
       endMonth = e.endMonth ?? addMonths(e.startMonth, 11);
@@ -165,6 +192,7 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
             TextField(
               controller: name,
               textInputAction: TextInputAction.next,
+              onChanged: (_) => _suggestCategory(allCats),
               decoration: InputDecoration(
                 hintText: kind == 'expense' ? 'بۆ نموونە: کرێی خانوو' : 'بۆ نموونە: موچە',
                 labelText: S.name,
@@ -176,21 +204,14 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
               children: [
                 Expanded(
                   flex: 3,
-                  child: TextField(
+                  child: AmountField(
                     controller: amount,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
-                    style: const TextStyle(fontFeatures: kTabular, fontWeight: FontWeight.w700),
+                    currency: currency,
                     onChanged: (_) => setState(() {}),
-                    decoration: InputDecoration(
-                      labelText: S.amount,
-                      suffixIcon: TextButton(
-                        onPressed: () => setState(
-                            () => currency = currency == 'IQD' ? 'USD' : 'IQD'),
-                        child: Text(currency,
-                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
-                      ),
-                    ),
+                    onToggleCurrency: () => setState(() {
+                      currency = currency == 'IQD' ? 'USD' : 'IQD';
+                      amount.text = '';
+                    }),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -221,7 +242,10 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
                   _CatPill(
                     c,
                     selected: c.id == effectiveCat,
-                    onTap: () => setState(() => categoryId = c.id),
+                    onTap: () => setState(() {
+                      categoryId = c.id;
+                      pickedCategory = true;
+                    }),
                   ),
               ],
             ),
