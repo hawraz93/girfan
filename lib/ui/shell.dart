@@ -4,7 +4,7 @@ import '../core/strings.dart';
 import '../core/theme.dart';
 import 'analytics/analytics_screen.dart';
 import 'home/home_screen.dart';
-import 'recurring/recurring_screen.dart';
+import 'plans/plans_screen.dart';
 import 'settings/settings_screen.dart';
 import 'tx/tx_sheet.dart';
 
@@ -20,7 +20,7 @@ class _ShellState extends State<Shell> {
   static const _pages = [
     HomeScreen(),
     AnalyticsScreen(),
-    RecurringScreen(),
+    PlansScreen(),
     SettingsScreen(),
   ];
 
@@ -88,9 +88,9 @@ class _NavBar extends StatelessWidget {
             _AddButton(onTap: onAdd),
             Expanded(
               child: _Item(
-                icon: Icons.event_repeat_outlined,
-                active: Icons.event_repeat_rounded,
-                label: S.recurring,
+                icon: Icons.event_note_outlined,
+                active: Icons.event_note_rounded,
+                label: S.plans,
                 selected: index == 2,
                 onTap: () => onTap(2),
               ),

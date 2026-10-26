@@ -44,6 +44,12 @@ int monthsBetween(String a, String b) {
   return n < 0 ? 0 : n;
 }
 
+/// Payments from [a] to [b] inclusive when one falls every [interval] months.
+int installmentsBetween(String a, String b, int interval) {
+  final n = monthsBetween(a, b);
+  return n <= 0 ? 0 : (n - 1) ~/ interval + 1;
+}
+
 int daysInMonth(String key) {
   final d = monthFromKey(key);
   return DateTime(d.year, d.month + 1, 0).day;

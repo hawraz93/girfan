@@ -49,6 +49,27 @@ Future<void> seedDemo(Repo repo) async {
   ));
   await repo.insertRecurring(Recurring(
     id: 0,
+    name: 'کارتی مۆبایل',
+    amount: 10000,
+    currency: 'IQD',
+    categoryId: id('مۆبایل و ئینتەرنێت', 'expense'),
+    kind: 'expense',
+    dayOfMonth: 1,
+    startMonth: addMonths(thisMonth, -12),
+  ));
+  await repo.insertRecurring(Recurring(
+    id: 0,
+    name: 'مۆلیدە',
+    amount: 80000,
+    currency: 'IQD',
+    categoryId: id('خانوو', 'expense'),
+    kind: 'expense',
+    dayOfMonth: 1,
+    startMonth: addMonths(thisMonth, -1),
+    intervalMonths: 2,
+  ));
+  await repo.insertRecurring(Recurring(
+    id: 0,
     name: 'ئینتەرنێت',
     amount: 45000,
     currency: 'IQD',
@@ -151,4 +172,47 @@ Future<void> seedDemo(Repo repo) async {
       ));
     }
   }
+
+  // Debts
+  final d1 = await repo.insertDebt(Debt(
+    id: 0,
+    person: 'کاک ئازاد',
+    direction: 'owe',
+    amount: 500000,
+    currency: 'IQD',
+    date: dateKey(now.subtract(const Duration(days: 40))),
+    dueDate: dateKey(now.add(const Duration(days: 20))),
+  ));
+  await repo.insertDebtPayment(DebtPayment(
+      id: 0, debtId: d1, amount: 200000, date: dateKey(now.subtract(const Duration(days: 10)))));
+  await repo.insertDebt(Debt(
+    id: 0,
+    person: 'سەرهەنگ',
+    direction: 'lent',
+    amount: 150,
+    currency: 'USD',
+    date: dateKey(now.subtract(const Duration(days: 15))),
+  ));
+
+  // Goals
+  final g1 = await repo.insertGoal(Goal(
+    id: 0,
+    name: 'لاپتۆپی نوێ',
+    icon: 'laptop',
+    color: 0xFF6C8CFF,
+    target: 900,
+    currency: 'USD',
+    deadline: addMonths(thisMonth, 5),
+  ));
+  await repo.insertGoalDeposit(GoalDeposit(
+      id: 0, goalId: g1, amount: 250, date: dateKey(now.subtract(const Duration(days: 35)))));
+  await repo.insertGoalDeposit(GoalDeposit(id: 0, goalId: g1, amount: 100, date: dateKey(now)));
+  await repo.insertGoal(Goal(
+    id: 0,
+    name: 'مۆبایل',
+    icon: 'phone',
+    color: 0xFF5FD3A3,
+    target: 1200000,
+    currency: 'IQD',
+  ));
 }

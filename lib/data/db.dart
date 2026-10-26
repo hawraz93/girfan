@@ -28,8 +28,14 @@ class AppDb {
     }
     _db = await openDatabase(
       join(dir, 'masruf.db'),
-      version: 1,
-      onCreate: _create,
+      version: 2,
+      onCreate: (db, version) async {
+        await _create(db, version);
+        await _v2(db);
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) await _v2(db);
+      },
     );
     return _db!;
   }
@@ -80,6 +86,55 @@ class AppDb {
       )
     ''');
     await _seed(db);
+  }
+
+  /// v2: repeat interval for recurring items, debts and saving goals.
+  static Future<void> _v2(Database db) async {
+    await db.execute(
+        'ALTER TABLE recurrings ADD COLUMN interval_months INTEGER NOT NULL DEFAULT 1');
+    await db.execute('''
+      CREATE TABLE debts(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        person TEXT NOT NULL,
+        direction TEXT NOT NULL,
+        amount REAL NOT NULL,
+        currency TEXT NOT NULL,
+        date TEXT NOT NULL,
+        due_date TEXT,
+        note TEXT NOT NULL DEFAULT ''
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE debt_payments(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        debt_id INTEGER NOT NULL,
+        amount REAL NOT NULL,
+        date TEXT NOT NULL,
+        note TEXT NOT NULL DEFAULT ''
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE goals(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        icon TEXT NOT NULL,
+        color INTEGER NOT NULL,
+        target REAL NOT NULL,
+        currency TEXT NOT NULL,
+        deadline TEXT,
+        note TEXT NOT NULL DEFAULT ''
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE goal_deposits(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        goal_id INTEGER NOT NULL,
+        amount REAL NOT NULL,
+        date TEXT NOT NULL
+      )
+    ''');
+    await db.execute('CREATE INDEX idx_debt_pay ON debt_payments(debt_id)');
+    await db.execute('CREATE INDEX idx_goal_dep ON goal_deposits(goal_id)');
   }
 
   static Future<void> _seed(Database db) async {

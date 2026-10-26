@@ -34,6 +34,13 @@ const Map<String, IconData> kCatIcons = {
   'bank': Icons.account_balance_rounded,
   'trend': Icons.trending_up_rounded,
   'star': Icons.star_rounded,
+  'laptop': Icons.laptop_mac_rounded,
+  'tv': Icons.tv_rounded,
+  'watch': Icons.watch_rounded,
+  'gem': Icons.diamond_rounded,
+  'savings': Icons.savings_rounded,
+  'chair': Icons.chair_rounded,
+  'camera': Icons.photo_camera_rounded,
   'more': Icons.more_horiz_rounded,
 };
 
@@ -43,4 +50,10 @@ IconData catIcon(String key) => kCatIcons[key] ?? Icons.category_rounded;
 const List<int> kCatColors = [
   0xFFF17B73, 0xFFF4A259, 0xFFE8B54D, 0xFFA3D977, 0xFF5FD3A3, 0xFF4FC3F7,
   0xFF6C8CFF, 0xFF9B7BFF, 0xFFD67BFF, 0xFFFF7BB3, 0xFFB0A090, 0xFF8A93A3,
+];
+
+/// Icons offered when creating a saving goal.
+const List<String> kGoalIcons = [
+  'phone', 'laptop', 'tv', 'car', 'home', 'travel', 'watch', 'gem', 'camera',
+  'chair', 'school', 'savings',
 ];

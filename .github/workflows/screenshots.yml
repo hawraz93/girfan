@@ -1,0 +1,44 @@
+name: Screenshots
+
+# Renders the app with demo data (test/screenshots_test.dart) and pushes the
+# PNGs to the `screenshots` branch, so the UI can be reviewed without a device.
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: shots-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Render screenshots
+        run: flutter test test/screenshots_test.dart --update-goldens
+
+      - name: Publish to screenshots branch
+        run: |
+          src="${{ github.head_ref || github.ref_name }}"
+          mkdir -p /tmp/shots && cp build/screenshots/*.png /tmp/shots/
+          cd /tmp/shots
+          git init -q -b screenshots
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          echo "Screenshots of ${src} @ ${{ github.sha }}" > README.md
+          git add . && git commit -q -m "Screenshots of ${src} @ ${{ github.sha }}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" screenshots

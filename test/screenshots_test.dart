@@ -75,8 +75,14 @@ void main() {
     await tester.tap(find.text(S.analytics));
     await shot(tester, '02-analytics-dark');
 
-    await tester.tap(find.text(S.recurring));
+    await tester.tap(find.text(S.plans));
     await shot(tester, '03-recurring-dark');
+
+    await tester.tap(find.text(S.debts).last);
+    await shot(tester, '03b-debts-dark');
+
+    await tester.tap(find.text(S.goals).last);
+    await shot(tester, '03c-goals-dark');
 
     await tester.tap(find.text(S.settings));
     await shot(tester, '04-settings-dark');

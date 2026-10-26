@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/strings.dart';
 import '../../core/theme.dart';
@@ -416,4 +417,193 @@ Future<String?> textPrompt(
       ],
     ),
   );
+}
+
+/// Amount input with a tappable IQD / USD switch on the side.
+class AmountField extends StatelessWidget {
+  final TextEditingController controller;
+  final String currency;
+  final VoidCallback onToggleCurrency;
+  final String label;
+  final ValueChanged<String>? onChanged;
+  final bool autofocus;
+
+  const AmountField({
+    super.key,
+    required this.controller,
+    required this.currency,
+    required this.onToggleCurrency,
+    this.label = S.amount,
+    this.onChanged,
+    this.autofocus = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      autofocus: autofocus,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
+      style: const TextStyle(fontFeatures: kTabular, fontWeight: FontWeight.w700, fontSize: 17),
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        labelText: label,
+        suffixIcon: TextButton(
+          onPressed: onToggleCurrency,
+          child: Text(currency, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+        ),
+      ),
+    );
+  }
+}
+
+/// Reads a number typed into an [AmountField] ("450,000" -> 450000).
+double parseAmount(String text) => double.tryParse(text.replaceAll(',', '').trim()) ?? 0;
+
+/// A tappable row that shows a picked value (date, month...) with an optional
+/// clear button.
+class PickerField extends StatelessWidget {
+  final IconData icon;
+  final String label, value;
+  final VoidCallback onTap;
+  final VoidCallback? onClear;
+
+  const PickerField({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.onTap,
+    this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.p;
+    return Material(
+      color: p.surface2,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              Icon(icon, color: p.accent, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label, style: TextStyle(color: p.muted, fontSize: 11)),
+                    Text(value, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                  ],
+                ),
+              ),
+              if (onClear != null)
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  onPressed: onClear,
+                  icon: Icon(Icons.close_rounded, color: p.muted, size: 18),
+                )
+              else
+                Icon(Icons.expand_more_rounded, color: p.muted),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Generic segmented switch with a sliding accent thumb.
+class SegmentTabs extends StatelessWidget {
+  final List<String> labels;
+  final int index;
+  final ValueChanged<int> onChanged;
+  final List<Color>? colors;
+
+  const SegmentTabs({
+    super.key,
+    required this.labels,
+    required this.index,
+    required this.onChanged,
+    this.colors,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.p;
+    return Container(
+      height: 44,
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(color: p.surface2, borderRadius: BorderRadius.circular(22)),
+      child: LayoutBuilder(builder: (context, c) {
+        final w = c.maxWidth / labels.length;
+        return Stack(
+          children: [
+            AnimatedPositionedDirectional(
+              duration: const Duration(milliseconds: 240),
+              curve: Curves.easeOutCubic,
+              start: w * index,
+              top: 0,
+              bottom: 0,
+              width: w,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: colors?[index] ?? p.accent,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+              ),
+            ),
+            Row(
+              children: [
+                for (var i = 0; i < labels.length; i++)
+                  Expanded(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => onChanged(i),
+                      child: Center(
+                        child: AnimatedDefaultTextStyle(
+                          duration: const Duration(milliseconds: 200),
+                          style: TextStyle(
+                            fontFamily: 'Vazirmatn',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            color: i == index ? Palette.onAccent : p.muted,
+                          ),
+                          child: Text(labels[i]),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        );
+      }),
+    );
+  }
+}
+
+/// Thin rounded progress bar.
+class ProgressLine extends StatelessWidget {
+  final double value;
+  final Color color;
+  const ProgressLine(this.value, this.color, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(4),
+      child: LinearProgressIndicator(
+        value: value.clamp(0.0, 1.0),
+        minHeight: 8,
+        backgroundColor: context.p.surface2,
+        color: color,
+      ),
+    );
+  }
 }

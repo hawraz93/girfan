@@ -201,6 +201,19 @@ class HeroCard extends StatelessWidget {
                       style: const TextStyle(color: Palette.heroMuted, fontSize: 12),
                     ),
                   ),
+                if (sum.saved != 0)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.savings_rounded, size: 13, color: Palette.heroMint),
+                        const SizedBox(width: 5),
+                        Text('${S.saved}: ${money(sum.saved, cur)}',
+                            style: const TextStyle(
+                                color: Palette.heroMint, fontSize: 12, fontFeatures: kTabular)),
+                      ],
+                    ),
+                  ),
                 const SizedBox(height: 18),
                 Row(
                   children: [

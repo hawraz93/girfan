@@ -130,4 +130,85 @@ class Repo {
     }
     return out;
   }
+
+  // ---------- debts ----------
+
+  Future<List<Debt>> debts() async {
+    final db = await _db;
+    final rows = await db.query('debts', orderBy: 'date DESC, id DESC');
+    return rows.map(Debt.fromMap).toList();
+  }
+
+  Future<int> insertDebt(Debt d) async => (await _db).insert('debts', d.toMap());
+
+  Future<void> updateDebt(Debt d) async {
+    final db = await _db;
+    await db.update('debts', d.toMap(), where: 'id = ?', whereArgs: [d.id]);
+  }
+
+  Future<void> deleteDebt(int id) async {
+    final db = await _db;
+    await db.delete('debt_payments', where: 'debt_id = ?', whereArgs: [id]);
+    await db.delete('debts', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<List<DebtPayment>> debtPayments() async {
+    final db = await _db;
+    final rows = await db.query('debt_payments', orderBy: 'date DESC, id DESC');
+    return rows.map(DebtPayment.fromMap).toList();
+  }
+
+  Future<int> insertDebtPayment(DebtPayment p) async =>
+      (await _db).insert('debt_payments', p.toMap());
+
+  Future<void> deleteDebtPayment(int id) async {
+    final db = await _db;
+    await db.delete('debt_payments', where: 'id = ?', whereArgs: [id]);
+  }
+
+  // ---------- goals ----------
+
+  Future<List<Goal>> goals() async {
+    final db = await _db;
+    final rows = await db.query('goals', orderBy: 'id ASC');
+    return rows.map(Goal.fromMap).toList();
+  }
+
+  Future<int> insertGoal(Goal g) async => (await _db).insert('goals', g.toMap());
+
+  Future<void> updateGoal(Goal g) async {
+    final db = await _db;
+    await db.update('goals', g.toMap(), where: 'id = ?', whereArgs: [g.id]);
+  }
+
+  Future<void> deleteGoal(int id) async {
+    final db = await _db;
+    await db.delete('goal_deposits', where: 'goal_id = ?', whereArgs: [id]);
+    await db.delete('goals', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<List<GoalDeposit>> goalDeposits() async {
+    final db = await _db;
+    final rows = await db.query('goal_deposits', orderBy: 'date DESC, id DESC');
+    return rows.map(GoalDeposit.fromMap).toList();
+  }
+
+  Future<int> insertGoalDeposit(GoalDeposit d) async =>
+      (await _db).insert('goal_deposits', d.toMap());
+
+  Future<void> deleteGoalDeposit(int id) async {
+    final db = await _db;
+    await db.delete('goal_deposits', where: 'id = ?', whereArgs: [id]);
+  }
+
+  /// Net amount put into goals per month and currency, for [from]..[to].
+  Future<List<Map<String, Object?>>> rawMonthlySaved(String from, String to) async {
+    final db = await _db;
+    return db.rawQuery('''
+      SELECT substr(d.date, 1, 7) AS m, g.currency AS currency, SUM(d.amount) AS s
+      FROM goal_deposits d JOIN goals g ON g.id = d.goal_id
+      WHERE substr(d.date, 1, 7) BETWEEN ? AND ?
+      GROUP BY m, g.currency
+    ''', [from, to]);
+  }
 }

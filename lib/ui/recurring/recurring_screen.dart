@@ -13,8 +13,9 @@ import '../widgets/month_picker.dart';
 import '../widgets/widgets.dart';
 import 'recurring_sheet.dart';
 
-class RecurringScreen extends ConsumerWidget {
-  const RecurringScreen({super.key});
+/// Fixed monthly items. Shown as the first tab of the plans screen.
+class RecurringTab extends ConsumerWidget {
+  const RecurringTab({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -25,24 +26,18 @@ class RecurringScreen extends ConsumerWidget {
     final cats = ref.watch(categoryMapProvider);
     final month = ref.watch(selectedMonthProvider);
 
-    return Scaffold(
-      body: SafeArea(
-        bottom: false,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
+    return ListView(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
           children: [
             Row(
               children: [
-                Text(S.recurring,
-                    style: context.tt.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
-                const Spacer(),
-                const MonthPill(),
+                Expanded(
+                  child: Text(S.recurringHelp, style: TextStyle(color: p.muted, fontSize: 12.5)),
+                ),
                 const SizedBox(width: 8),
-                RoundIconButton(Icons.add_rounded, onTap: () => showRecurringSheet(context)),
+                const MonthPill(),
               ],
             ),
-            const SizedBox(height: 6),
-            Text(S.recurringHelp, style: TextStyle(color: p.muted, fontSize: 12.5)),
             const SizedBox(height: 18),
             recs.when(
               data: (list) {
@@ -80,8 +75,6 @@ class RecurringScreen extends ConsumerWidget {
               error: (e, _) => Text('$e'),
             ),
           ],
-        ),
-      ),
     );
   }
 }
@@ -158,7 +151,7 @@ class _RecurringCard extends StatelessWidget {
                     Text(r.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
                     const SizedBox(height: 2),
                     Text(
-                      '${money(r.amount, r.currency)} · ${S.dayOfMonth} ${r.dayOfMonth}',
+                      '${money(r.amount, r.currency)} · ${S.everyNMonths(r.intervalMonths)} · ${S.dayOfMonth} ${r.dayOfMonth}',
                       style: TextStyle(color: p.muted, fontSize: 12.5, fontFeatures: kTabular),
                     ),
                   ],
@@ -166,6 +159,8 @@ class _RecurringCard extends StatelessWidget {
               ),
               if (covers)
                 StatusChip(isPaid ? S.paid : S.due, isPaid ? p.mint : p.accent)
+              else if (!r.hasEnd || r.nextDueMonth(month).compareTo(r.endMonth!) <= 0)
+                StatusChip('${S.nextDue}: ${monthShort(r.nextDueMonth(month))}', p.muted)
               else
                 StatusChip(r.isExpense ? S.expense : S.income, p.muted),
             ],
