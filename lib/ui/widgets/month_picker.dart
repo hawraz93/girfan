@@ -86,7 +86,7 @@ class _MonthCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.p;
     return Material(
-      color: selected ? p.gold : p.surface2,
+      color: selected ? p.accent : p.surface2,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
@@ -94,14 +94,14 @@ class _MonthCell extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            border: isNow && !selected ? Border.all(color: p.gold, width: 1.2) : null,
+            border: isNow && !selected ? Border.all(color: p.accent, width: 1.2) : null,
           ),
           alignment: Alignment.center,
           child: Text(label,
               style: TextStyle(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w700,
-                color: selected ? const Color(0xFF1A1300) : p.text,
+                color: selected ? Palette.onAccent : p.text,
               )),
         ),
       ),
@@ -131,7 +131,7 @@ class MonthPill extends ConsumerWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.calendar_month_rounded, size: 18, color: p.gold),
+              Icon(Icons.calendar_month_rounded, size: 18, color: p.accent),
               const SizedBox(width: 8),
               Text(monthLabel(m),
                   style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5)),

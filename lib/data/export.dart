@@ -25,9 +25,9 @@ Future<void> exportCsv(Repo repo, Map<int, Category> cats) async {
     ].join(','));
   }
   final dir = await getTemporaryDirectory();
-  final file = File('${dir.path}/masruf-${dateKey(DateTime.now())}.csv');
+  final file = File('${dir.path}/girfan-${dateKey(DateTime.now())}.csv');
   await file.writeAsString(sb.toString());
   await SharePlus.instance.share(
-    ShareParams(files: [XFile(file.path, mimeType: 'text/csv')], subject: 'Masruf export'),
+    ShareParams(files: [XFile(file.path, mimeType: 'text/csv')], subject: 'Girfan export'),
   );
 }

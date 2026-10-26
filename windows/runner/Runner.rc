@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.hawra" "\0"
-            VALUE "FileDescription", "masruf" "\0"
+            VALUE "FileDescription", "Girfan" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "masruf" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.hawra. All rights reserved." "\0"
             VALUE "OriginalFilename", "masruf.exe" "\0"
-            VALUE "ProductName", "masruf" "\0"
+            VALUE "ProductName", "Girfan" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

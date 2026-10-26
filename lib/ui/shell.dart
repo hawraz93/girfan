@@ -4,7 +4,7 @@ import '../core/strings.dart';
 import '../core/theme.dart';
 import 'analytics/analytics_screen.dart';
 import 'home/home_screen.dart';
-import 'recurring/recurring_screen.dart';
+import 'plans/plans_screen.dart';
 import 'settings/settings_screen.dart';
 import 'tx/tx_sheet.dart';
 
@@ -20,7 +20,7 @@ class _ShellState extends State<Shell> {
   static const _pages = [
     HomeScreen(),
     AnalyticsScreen(),
-    RecurringScreen(),
+    PlansScreen(),
     SettingsScreen(),
   ];
 
@@ -88,9 +88,9 @@ class _NavBar extends StatelessWidget {
             _AddButton(onTap: onAdd),
             Expanded(
               child: _Item(
-                icon: Icons.event_repeat_outlined,
-                active: Icons.event_repeat_rounded,
-                label: S.recurring,
+                icon: Icons.event_note_outlined,
+                active: Icons.event_note_rounded,
+                label: S.plans,
                 selected: index == 2,
                 onTap: () => onTap(2),
               ),
@@ -127,7 +127,7 @@ class _Item extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.p;
-    final color = selected ? p.gold : p.muted;
+    final color = selected ? p.accent : p.muted;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
@@ -167,17 +167,17 @@ class _AddButton extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [const Color(0xFFF3CE7E), p.gold],
+            colors: [Palette.accentSoft, p.accent],
           ),
           boxShadow: [
             BoxShadow(
-              color: p.gold.withValues(alpha: 0.45),
+              color: p.accent.withValues(alpha: 0.45),
               blurRadius: 18,
               offset: const Offset(0, 6),
             ),
           ],
         ),
-        child: const Icon(Icons.add_rounded, color: Color(0xFF1A1300), size: 30),
+        child: const Icon(Icons.add_rounded, color: Palette.onAccent, size: 30),
       ),
     );
   }

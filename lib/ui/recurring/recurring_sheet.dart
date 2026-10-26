@@ -37,6 +37,9 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
   late String startMonth;
   bool hasEnd = false;
   late String endMonth;
+  int interval = 1;
+
+  static const _intervals = [1, 2, 3, 6, 12];
 
   @override
   void initState() {
@@ -54,6 +57,7 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
       startMonth = e.startMonth;
       hasEnd = e.endMonth != null;
       endMonth = e.endMonth ?? addMonths(e.startMonth, 11);
+      interval = e.intervalMonths;
     } else {
       kind = 'expense';
       currency = s.baseCurrency;
@@ -95,6 +99,7 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
       startMonth: startMonth,
       endMonth: hasEnd ? endMonth : null,
       note: note.text.trim(),
+      intervalMonths: interval,
     );
     final repo = ref.read(repoProvider);
     if (widget.existing != null) {
@@ -120,7 +125,7 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
     final allCats = ref.watch(categoriesProvider).valueOrNull ?? const <Category>[];
     final cats = allCats.where((c) => c.kind == kind && (!c.archived || c.id == categoryId)).toList();
     final effectiveCat = categoryId ?? (cats.isNotEmpty ? cats.first.id : null);
-    final n = hasEnd ? monthsBetween(startMonth, endMonth) : 0;
+    final n = hasEnd ? installmentsBetween(startMonth, endMonth, interval) : 0;
 
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
@@ -221,8 +226,24 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
               ],
             ),
             const SizedBox(height: 16),
+            Text(S.repeat,
+                style: TextStyle(color: p.muted, fontSize: 12.5, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final i in _intervals)
+                  Pill(
+                    label: S.everyNMonths(i),
+                    selected: interval == i,
+                    onTap: () => setState(() => interval = i),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
             _MonthField(
-              label: S.startMonth,
+              label: interval == 1 ? S.startMonth : '${S.startMonth} (یەکەم پارەدان)',
               value: startMonth,
               onTap: () async {
                 final r = await showMonthPicker(context, startMonth);
@@ -346,7 +367,7 @@ class _MonthField extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Row(
             children: [
-              Icon(Icons.calendar_month_rounded, color: p.gold, size: 20),
+              Icon(Icons.calendar_month_rounded, color: p.accent, size: 20),
               const SizedBox(width: 10),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,6 +1,6 @@
 /// Kurdish (Sorani) UI strings. Kept in one place so wording stays consistent.
 class S {
-  static const appName = 'مەسروف';
+  static const appName = 'گیرفان';
   static const home = 'سەرەکی';
   static const analytics = 'شیکاری';
   static const recurring = 'جێگیرەکان';
@@ -94,4 +94,57 @@ class S {
   static const net = 'پاشماوە';
   static const ofBudget = 'لە سنووری';
   static const overBudget = 'سنوور تێپەڕی';
+
+  // Plans tab
+  static const plans = 'پلان';
+  static const repeat = 'دووبارەبوونەوە';
+  static const everyMonth = 'مانگانە';
+  static String everyNMonths(int n) => switch (n) {
+        1 => everyMonth,
+        12 => 'ساڵانە',
+        _ => 'هەر $n مانگ جارێک',
+      };
+  static const nextDue = 'دواتر';
+
+  // Debts
+  static const debts = 'قەرز';
+  static const iOwe = 'قەرزی سەرم';
+  static const owedToMe = 'قەرزم لای خەڵک';
+  static const iOweShort = 'من قەرزدارم';
+  static const lentShort = 'قەرزم داوە';
+  static const person = 'کەس';
+  static const personHint = 'ناوی کەسەکە یان شوێنەکە';
+  static const newDebt = 'قەرزی نوێ';
+  static const editDebt = 'دەستکاری قەرز';
+  static const dueDate = 'وادەی دانەوە';
+  static const noDueDate = 'بێ وادە';
+  static const noDebts = 'هیچ قەرزێک تۆمار نەکراوە';
+  static const noDebtsHint = 'قەرزی سەر خۆت و ئەوەی لای خەڵکە لێرە بنووسە';
+  static const payBack = 'پارەدانەوە';
+  static const receivePayment = 'وەرگرتنەوە';
+  static const payments = 'پارەدانەوەکان';
+  static const settled = 'تەواو بوو';
+  static const overdue = 'وادەی تێپەڕی';
+  static const debtsSeparate =
+      'قەرز لە باڵانسی مانگانە جیایە. ئەگەر پارەدانەوەکە وەک خەرجیش دەتەوێت، لە سەرەکی تۆماری بکە.';
+
+  // Goals
+  static const goals = 'ئامانج';
+  static const goalsTitle = 'پلانی کڕین';
+  static const newGoal = 'ئامانجی نوێ';
+  static const editGoal = 'دەستکاری ئامانج';
+  static const goalNameHint = 'بۆ نموونە: مۆبایلی نوێ';
+  static const target = 'نرخ / ئامانج';
+  static const deadline = 'دەمەوێت تا ئەم مانگە بیکڕم';
+  static const noDeadline = 'بێ کات';
+  static const noGoals = 'هیچ پلانێکی کڕینت نییە';
+  static const noGoalsHint = 'ئامێرێک یان شتێک کە دەتەوێت بیکڕیت، پارەی بۆ کۆ بکەرەوە';
+  static const deposit = 'دانان';
+  static const withdraw = 'دەرهێنان';
+  static const savedSoFar = 'کۆکراوەتەوە';
+  static const perMonth = 'مانگانە پێویستە';
+  static const reached = 'گەیشتیت! 🎉';
+  static const history = 'مێژوو';
+  static const saved = 'پاشەکەوت';
+  static const goalsAffectBalance = 'ئەو پارەیەی دایدەنێیت لە باڵانسی ئەو مانگە کەم دەبێتەوە.';
 }

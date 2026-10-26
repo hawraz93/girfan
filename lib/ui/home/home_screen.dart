@@ -152,8 +152,8 @@ class HeroCard extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(colors: [
-                  Palette.heroGold.withValues(alpha: 0.32),
-                  Palette.heroGold.withValues(alpha: 0),
+                  Palette.heroAccent.withValues(alpha: 0.32),
+                  Palette.heroAccent.withValues(alpha: 0),
                 ]),
               ),
             ),
@@ -199,6 +199,19 @@ class HeroCard extends StatelessWidget {
                     child: Text(
                       '${(sum.expense / sum.income * 100).round()}٪ ${S.ofIncome} خەرج کراوە',
                       style: const TextStyle(color: Palette.heroMuted, fontSize: 12),
+                    ),
+                  ),
+                if (sum.saved != 0)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.savings_rounded, size: 13, color: Palette.heroMint),
+                        const SizedBox(width: 5),
+                        Text('${S.saved}: ${money(sum.saved, cur)}',
+                            style: const TextStyle(
+                                color: Palette.heroMint, fontSize: 12, fontFeatures: kTabular)),
+                      ],
                     ),
                   ),
                 const SizedBox(height: 18),
@@ -377,12 +390,12 @@ class _DueSection extends StatelessWidget {
           trailing: Container(
             padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2),
             decoration: BoxDecoration(
-              color: p.gold.withValues(alpha: 0.18),
+              color: p.accent.withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text('${items.length}',
                 style: TextStyle(
-                    color: p.gold, fontWeight: FontWeight.w800, fontSize: 12, fontFeatures: kTabular)),
+                    color: p.accent, fontWeight: FontWeight.w800, fontSize: 12, fontFeatures: kTabular)),
           ),
         ),
         SizedBox(
@@ -441,7 +454,7 @@ class _DueCard extends StatelessWidget {
                     style: TextStyle(color: p.muted, fontSize: 12, fontFeatures: kTabular)),
                 const Spacer(),
                 Material(
-                  color: p.gold,
+                  color: p.accent,
                   borderRadius: BorderRadius.circular(12),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(12),
@@ -450,7 +463,7 @@ class _DueCard extends StatelessWidget {
                       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       child: Text(S.record,
                           style: TextStyle(
-                              fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF1A1300))),
+                              fontSize: 12, fontWeight: FontWeight.w800, color: Palette.onAccent)),
                     ),
                   ),
                 ),

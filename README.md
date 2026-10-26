@@ -1,4 +1,4 @@
-# مەسروف (Masruf)
+# گیرفان (Girfan)
 
 Personal daily expense tracker in Kurdish (Sorani), offline-first, Flutter.
 

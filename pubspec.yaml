@@ -28,18 +28,21 @@ dev_dependencies:
   flutter_lints: ^5.0.0
   flutter_launcher_icons: ^0.14.4
 
-# App icon: assets/icon/*.png are rendered by test/icon_test.dart.
-# Apply with: dart run flutter_launcher_icons
+# App icon: assets/icon/*.png and all platform icons are drawn by
+# tool/make_icon.py (python3 tool/make_icon.py). flutter_launcher_icons can
+# regenerate the platform icons from the same PNGs if needed.
 flutter_launcher_icons:
   android: true
   ios: true
   remove_alpha_ios: true
   image_path: assets/icon/icon.png
-  adaptive_icon_background: "#141A26"
+  adaptive_icon_background: "#0E2147"
   adaptive_icon_foreground: assets/icon/foreground.png
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/icon/logo.png
   fonts:
     - family: Vazirmatn
       fonts:

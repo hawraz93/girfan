@@ -393,7 +393,7 @@ class _NetRow extends StatelessWidget {
         const SizedBox(width: 10),
         cell(S.expense, sum.expense, p.coral),
         const SizedBox(width: 10),
-        cell(S.net, sum.net, sum.net < 0 ? p.coral : p.gold),
+        cell(S.net, sum.net, sum.net < 0 ? p.coral : p.accent),
       ],
     );
   }
