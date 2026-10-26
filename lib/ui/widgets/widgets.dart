@@ -252,7 +252,7 @@ class Pill extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.p;
     return Material(
-      color: selected ? p.gold : p.surface2,
+      color: selected ? p.accent : p.surface2,
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
@@ -263,14 +263,14 @@ class Pill extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (icon != null) ...[
-                Icon(icon, size: 16, color: selected ? const Color(0xFF1A1300) : p.muted),
+                Icon(icon, size: 16, color: selected ? Palette.onAccent : p.muted),
                 const SizedBox(width: 6),
               ],
               Text(label,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: selected ? const Color(0xFF1A1300) : p.text,
+                    color: selected ? Palette.onAccent : p.text,
                   )),
             ],
           ),

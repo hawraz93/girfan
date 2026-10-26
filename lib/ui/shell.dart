@@ -127,7 +127,7 @@ class _Item extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.p;
-    final color = selected ? p.gold : p.muted;
+    final color = selected ? p.accent : p.muted;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
@@ -167,17 +167,17 @@ class _AddButton extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [const Color(0xFFF3CE7E), p.gold],
+            colors: [Palette.accentSoft, p.accent],
           ),
           boxShadow: [
             BoxShadow(
-              color: p.gold.withValues(alpha: 0.45),
+              color: p.accent.withValues(alpha: 0.45),
               blurRadius: 18,
               offset: const Offset(0, 6),
             ),
           ],
         ),
-        child: const Icon(Icons.add_rounded, color: Color(0xFF1A1300), size: 30),
+        child: const Icon(Icons.add_rounded, color: Palette.onAccent, size: 30),
       ),
     );
   }

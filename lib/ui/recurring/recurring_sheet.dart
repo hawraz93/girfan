@@ -346,7 +346,7 @@ class _MonthField extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Row(
             children: [
-              Icon(Icons.calendar_month_rounded, color: p.gold, size: 20),
+              Icon(Icons.calendar_month_rounded, color: p.accent, size: 20),
               const SizedBox(width: 10),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

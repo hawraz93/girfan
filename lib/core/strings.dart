@@ -1,6 +1,6 @@
 /// Kurdish (Sorani) UI strings. Kept in one place so wording stays consistent.
 class S {
-  static const appName = 'مەسروف';
+  static const appName = 'گیرفان';
   static const home = 'سەرەکی';
   static const analytics = 'شیکاری';
   static const recurring = 'جێگیرەکان';

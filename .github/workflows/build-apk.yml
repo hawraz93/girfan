@@ -1,0 +1,88 @@
+name: Build APK
+
+# Every merge to main builds a release APK and publishes it as a GitHub
+# Release, so it can be downloaded and installed straight from a phone.
+# Pull requests get the same build (as a downloadable artifact) to catch errors
+# before merging.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install packages
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      # Sign with the real release key when the secrets exist, so the APK can
+      # update an already-installed copy without losing data. Without them the
+      # build falls back to the debug key (see android/app/build.gradle.kts).
+      - name: Set up release signing
+        if: env.KEYSTORE_B64 != ''
+        run: |
+          echo "$KEYSTORE_B64" | base64 --decode > android/app/upload-keystore.jks
+          cat > android/key.properties <<EOF
+          storeFile=upload-keystore.jks
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          EOF
+
+      - name: Build APK
+        run: flutter build apk --release --build-number=${{ github.run_number }}
+
+      - name: Name the APK
+        id: apk
+        run: |
+          version=$(grep '^version:' pubspec.yaml | sed 's/version: *//; s/+.*//')
+          name="girfan-${version}-build${{ github.run_number }}.apk"
+          cp build/app/outputs/flutter-apk/app-release.apk "$name"
+          echo "file=$name" >> "$GITHUB_OUTPUT"
+          echo "tag=v${version}-build${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.apk.outputs.file }}
+          path: ${{ steps.apk.outputs.file }}
+          retention-days: 14
+
+      - name: Publish release
+        if: github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.apk.outputs.tag }}
+          name: ${{ steps.apk.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          files: ${{ steps.apk.outputs.file }}
+          body: |
+            APK for ${{ github.sha }}.
+            Download the .apk below on your phone and open it to install.

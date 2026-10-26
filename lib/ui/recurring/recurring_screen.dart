@@ -165,7 +165,7 @@ class _RecurringCard extends StatelessWidget {
                 ),
               ),
               if (covers)
-                StatusChip(isPaid ? S.paid : S.due, isPaid ? p.mint : p.gold)
+                StatusChip(isPaid ? S.paid : S.due, isPaid ? p.mint : p.accent)
               else
                 StatusChip(r.isExpense ? S.expense : S.income, p.muted),
             ],
@@ -178,7 +178,7 @@ class _RecurringCard extends StatelessWidget {
                 value: total == 0 ? 0 : (paidCount / total).clamp(0.0, 1.0),
                 minHeight: 8,
                 backgroundColor: p.surface2,
-                color: p.gold,
+                color: p.accent,
               ),
             ),
             const SizedBox(height: 8),

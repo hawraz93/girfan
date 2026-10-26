@@ -72,19 +72,15 @@ class _LockScreenState extends ConsumerState<LockScreen> {
           children: [
             const Spacer(flex: 2),
             Container(
-              width: 76,
-              height: 76,
+              width: 84,
+              height: 84,
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(colors: [const Color(0xFFF3CE7E), p.gold]),
+                borderRadius: BorderRadius.circular(24),
                 boxShadow: [
-                  BoxShadow(color: p.gold.withValues(alpha: 0.4), blurRadius: 26, offset: const Offset(0, 10)),
+                  BoxShadow(color: p.accent.withValues(alpha: 0.30), blurRadius: 26, offset: const Offset(0, 10)),
                 ],
               ),
-              child: const Center(
-                child: Text('م',
-                    style: TextStyle(fontSize: 34, fontWeight: FontWeight.w800, color: Color(0xFF1A1300), height: 1)),
-              ),
+              child: Image.asset('assets/icon/logo.png', width: 84, height: 84),
             ),
             const SizedBox(height: 22),
             Text(S.appName, style: context.tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
@@ -102,7 +98,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                     margin: const EdgeInsets.symmetric(horizontal: 7),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: i < entered.length ? p.gold : p.surface2,
+                      color: i < entered.length ? p.accent : p.surface2,
                       border: Border.all(color: error ? p.coral : p.outline),
                     ),
                   ),

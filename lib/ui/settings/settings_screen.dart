@@ -203,7 +203,7 @@ class _Tile extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(color: p.surface2, shape: BoxShape.circle),
-              child: Icon(icon, size: 18, color: p.gold),
+              child: Icon(icon, size: 18, color: p.accent),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -263,14 +263,14 @@ class _Segmented extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: selected ? p.gold : Colors.transparent,
+                    color: selected ? p.accent : Colors.transparent,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(labels[i],
                       style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,
-                        color: selected ? const Color(0xFF1A1300) : p.muted,
+                        color: selected ? Palette.onAccent : p.muted,
                       )),
                 ),
               );
