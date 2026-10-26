@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
 
@@ -43,32 +43,31 @@ jobs:
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
-      # Sign with the real release key when the secrets exist, so the APK can
-      # update an already-installed copy without losing data. Without them the
-      # build falls back to the debug key (see android/app/build.gradle.kts).
+      # Sign with the real release key so every APK can update the installed
+      # app without losing data. The keystore is kept in the repo encrypted
+      # (android/app/release-keystore.enc); ANDROID_KEYSTORE_PASSWORD unlocks it.
       # A release signed with a throwaway key could never be updated later,
       # so published releases must use the real key.
       - name: Require release key for published builds
-        if: github.event_name != 'pull_request' && env.KEYSTORE_B64 == ''
+        if: github.event_name != 'pull_request' && env.KEYSTORE_PASS == ''
         run: |
-          echo "::error::Add the ANDROID_KEYSTORE_* secrets before publishing a release."
+          echo "::error::Add the ANDROID_KEYSTORE_PASSWORD secret before publishing a release."
           exit 1
 
       - name: Set up release signing
-        if: env.KEYSTORE_B64 != ''
+        if: env.KEYSTORE_PASS != ''
         run: |
-          # Pasting from a phone can add spaces or line breaks; drop them.
-          printf '%s' "$KEYSTORE_B64" | tr -d ' \r\n\t' | base64 --decode --ignore-garbage > android/app/upload-keystore.jks
-          if ! keytool -list -keystore android/app/upload-keystore.jks \
-               -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" -alias "${{ secrets.ANDROID_KEY_ALIAS }}" > /dev/null; then
-            echo "::error::Keystore could not be opened: check ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD and ANDROID_KEY_ALIAS."
-            exit 1
-          fi
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 \
+            -in android/app/release-keystore.enc -out android/app/upload-keystore.jks \
+            -pass env:KEYSTORE_PASS \
+            || { echo "::error::Could not decrypt the keystore: check ANDROID_KEYSTORE_PASSWORD."; exit 1; }
+          keytool -list -keystore android/app/upload-keystore.jks -storepass "$KEYSTORE_PASS" -alias girfan > /dev/null \
+            || { echo "::error::Keystore password or alias is wrong."; exit 1; }
           cat > android/key.properties <<EOF
           storeFile=upload-keystore.jks
-          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
-          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          storePassword=$KEYSTORE_PASS
+          keyAlias=girfan
+          keyPassword=$KEYSTORE_PASS
           EOF
 
       - name: Build APK
