@@ -28,13 +28,15 @@ class AppDb {
     }
     _db = await openDatabase(
       join(dir, 'masruf.db'),
-      version: 2,
+      version: 3,
       onCreate: (db, version) async {
         await _create(db, version);
         await _v2(db);
+        await _v3(db);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) await _v2(db);
+        if (oldVersion < 3) await _v3(db);
       },
     );
     return _db!;
@@ -135,6 +137,29 @@ class AppDb {
     ''');
     await db.execute('CREATE INDEX idx_debt_pay ON debt_payments(debt_id)');
     await db.execute('CREATE INDEX idx_goal_dep ON goal_deposits(goal_id)');
+  }
+
+  /// v3: a category for loans and installments, which had no obvious home.
+  static Future<void> _v3(Database db) async {
+    const name = 'قیست و سلفە';
+    int? one(List<Map<String, Object?>> rows) =>
+        rows.isEmpty ? null : rows.first.values.first as int?;
+    final exists = one(await db.rawQuery(
+            "SELECT COUNT(*) FROM categories WHERE kind = 'expense' AND name = ?", [name])) ??
+        0;
+    if (exists > 0) return;
+    final max =
+        one(await db.rawQuery("SELECT MAX(sort) FROM categories WHERE kind = 'expense'")) ?? 0;
+    await db.insert('categories', {
+      'name': name,
+      'icon': 'bank',
+      'color': 0xFF6C8CFF,
+      'kind': 'expense',
+      'sort': max + 1,
+    });
+    // Keep "other" last.
+    await db.update('categories', {'sort': max + 2},
+        where: "kind = 'expense' AND name = ?", whereArgs: ['هیتر']);
   }
 
   static Future<void> _seed(Database db) async {
