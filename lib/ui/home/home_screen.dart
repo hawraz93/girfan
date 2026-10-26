@@ -11,6 +11,7 @@ import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../state/providers.dart';
 import '../tx/tx_sheet.dart';
+import '../update/update_sheet.dart';
 import '../widgets/month_picker.dart';
 import '../widgets/widgets.dart';
 
@@ -34,6 +35,7 @@ class HomeScreen extends ConsumerWidget {
           children: [
             _Header(name: s.userName),
             const SizedBox(height: 18),
+            const UpdateBanner(),
             summary.when(
               data: (sum) => HeroCard(sum: sum, settings: s)
                   .animate(key: ValueKey(sum.month))

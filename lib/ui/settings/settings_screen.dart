@@ -6,7 +6,9 @@ import '../../core/strings.dart';
 import '../../core/theme.dart';
 import '../../data/export.dart';
 import '../../state/providers.dart';
+import '../../state/update.dart';
 import '../lock/lock_screen.dart';
+import '../update/update_sheet.dart';
 import '../widgets/widgets.dart';
 import 'categories_screen.dart';
 
@@ -129,9 +131,26 @@ class SettingsScreen extends ConsumerWidget {
                 },
               ),
             ]),
+            _Group(S.version, [
+              _Tile(
+                icon: Icons.system_update_rounded,
+                title: S.updCheck,
+                value: ref.watch(appVersionProvider).valueOrNull?.label ?? '',
+                onTap: () async {
+                  ref.read(updateCheckTick.notifier).state++;
+                  final info = await ref.read(updateProvider.future);
+                  if (!context.mounted) return;
+                  if (info == null) {
+                    snack(context, S.updLatest);
+                  } else {
+                    showUpdateSheet(context, info);
+                  }
+                },
+              ),
+            ]),
             const SizedBox(height: 12),
             Center(
-              child: Text('${S.appName} · 1.0.0', style: TextStyle(color: p.muted, fontSize: 12)),
+              child: Text(S.appName, style: TextStyle(color: p.muted, fontSize: 12)),
             ),
           ],
         ),

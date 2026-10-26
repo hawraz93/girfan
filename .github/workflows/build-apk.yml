@@ -24,6 +24,7 @@ jobs:
     timeout-minutes: 30
     env:
       KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      RELEASES_TOKEN: ${{ secrets.RELEASES_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -99,3 +100,17 @@ jobs:
           body: |
             APK for ${{ github.sha }}.
             Download the .apk below on your phone and open it to install.
+
+      # The app checks this public repo for new versions (the code repo is
+      # private, so the app could not read its releases without a login).
+      - name: Publish to public releases repo
+        if: github.event_name != 'pull_request' && env.RELEASES_TOKEN != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          repository: ${{ github.repository_owner }}/girfan-releases
+          token: ${{ secrets.RELEASES_TOKEN }}
+          tag_name: ${{ steps.apk.outputs.tag }}
+          name: ${{ steps.apk.outputs.tag }}
+          files: ${{ steps.apk.outputs.file }}
+          make_latest: "true"
+          body: Girfan ${{ steps.apk.outputs.tag }}

@@ -147,4 +147,19 @@ class S {
   static const history = 'مێژوو';
   static const saved = 'پاشەکەوت';
   static const goalsAffectBalance = 'ئەو پارەیەی دایدەنێیت لە باڵانسی ئەو مانگە کەم دەبێتەوە.';
+
+  // Updates
+  static const updTitle = 'وەشانی نوێی گیرفان هەیە';
+  static const updBuild = 'وەشان';
+  static const updKeepsData = 'هەموو داتاکانت دەمێننەوە.';
+  static const updNow = 'نوێکردنەوە';
+  static const updLater = 'دواتر';
+  static const updRetry = 'دووبارە هەوڵ بدە';
+  static const updDownloading = 'داگرتن...';
+  static const updInstalling = 'لە پەنجەرەی ئەندرۆید «Update» دابگرە';
+  static const updFailed = 'نوێکردنەوە سەرکەوتوو نەبوو';
+  static const updPermission = 'ڕێگە بە گیرفان بدە ئەپ دابمەزرێنێت، پاشان دووبارە هەوڵ بدە';
+  static const updCheck = 'پشکنینی نوێکردنەوە';
+  static const updLatest = 'نوێترین وەشانت هەیە';
+  static const version = 'وەشان';
 }
