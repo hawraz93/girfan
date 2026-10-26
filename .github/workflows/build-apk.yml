@@ -46,6 +46,14 @@ jobs:
       # Sign with the real release key when the secrets exist, so the APK can
       # update an already-installed copy without losing data. Without them the
       # build falls back to the debug key (see android/app/build.gradle.kts).
+      # A release signed with a throwaway key could never be updated later,
+      # so published releases must use the real key.
+      - name: Require release key for published builds
+        if: github.event_name != 'pull_request' && env.KEYSTORE_B64 == ''
+        run: |
+          echo "::error::Add the ANDROID_KEYSTORE_* secrets before publishing a release."
+          exit 1
+
       - name: Set up release signing
         if: env.KEYSTORE_B64 != ''
         run: |
