@@ -153,3 +153,13 @@ String money(double v, String cur) {
 /// Number only, without the currency suffix.
 String moneyNumber(double v, String cur) =>
     cur == 'USD' ? _n2.format(v) : _n0.format(v);
+
+/// "450,000 د.ع + $120" from per-currency totals; zero entries are skipped.
+/// Dinar first. Shows [fallback] as zero when everything is zero.
+String moneyMulti(Map<String, double> totals, {String fallback = 'IQD'}) {
+  final parts = [
+    for (final c in const ['IQD', 'USD'])
+      if ((totals[c] ?? 0).abs() > 0.004) money(totals[c]!, c),
+  ];
+  return parts.isEmpty ? money(0, fallback) : parts.join(' + ');
+}

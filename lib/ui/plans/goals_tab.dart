@@ -30,8 +30,10 @@ class GoalsTab extends ConsumerWidget {
                 subtitle: S.noGoalsHint,
               );
             }
-            final saved = list.fold(0.0, (a, v) => a + s.toBase(v.saved, v.goal.currency));
-            final target = list.fold(0.0, (a, v) => a + s.toBase(v.goal.target, v.goal.currency));
+            final saved = s.split(list, (v) => v.saved, (v) => v.goal.currency);
+            final target = s.split(list, (v) => v.goal.target, (v) => v.goal.currency);
+            final sumSaved = saved.values.fold(0.0, (a, b) => a + b);
+            final sumTarget = target.values.fold(0.0, (a, b) => a + b);
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -42,16 +44,19 @@ class GoalsTab extends ConsumerWidget {
                     children: [
                       Text(S.savedSoFar, style: TextStyle(color: p.muted, fontSize: 12)),
                       const SizedBox(height: 4),
-                      Text(money(saved, s.baseCurrency),
+                      Text(moneyMulti(saved, fallback: s.baseCurrency),
                           style: TextStyle(
                               color: p.accent,
                               fontWeight: FontWeight.w800,
                               fontSize: 20,
                               fontFeatures: kTabular)),
-                      const SizedBox(height: 10),
-                      ProgressLine(target <= 0 ? 0 : saved / target, p.accent),
+                      // Mixed currencies are only comparable when merged.
+                      if (s.mergeCurrencies || target.length <= 1) ...[
+                        const SizedBox(height: 10),
+                        ProgressLine(sumTarget <= 0 ? 0 : sumSaved / sumTarget, p.accent),
+                      ],
                       const SizedBox(height: 6),
-                      Text('${S.target}: ${money(target, s.baseCurrency)}',
+                      Text('${S.target}: ${moneyMulti(target, fallback: s.baseCurrency)}',
                           style: TextStyle(color: p.muted, fontSize: 12, fontFeatures: kTabular)),
                     ],
                   ),

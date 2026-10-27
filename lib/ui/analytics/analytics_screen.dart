@@ -25,7 +25,8 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
   @override
   Widget build(BuildContext context) {
     final s = ref.watch(settingsProvider);
-    final cur = s.baseCurrency;
+    final cur = ref.watch(effectiveViewProvider);
+    final showBudget = s.mergeCurrencies || cur == s.baseCurrency;
     final summary = ref.watch(monthSummaryProvider);
     final series = ref.watch(monthlySeriesProvider);
 
@@ -40,6 +41,8 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                 Text(S.analytics,
                     style: context.tt.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
                 const Spacer(),
+                const CurrencySwitch(),
+                const SizedBox(width: 6),
                 const MonthPill(),
               ],
             ),
@@ -55,7 +58,8 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                     child: EmptyState(icon: Icons.pie_chart_outline_rounded, title: S.nothingHere),
                   );
                 }
-                return _Breakdown(items: items, total: total, cur: cur, isExpense: kind == 'expense');
+                return _Breakdown(
+                    items: items, total: total, cur: cur, isExpense: kind == 'expense' && showBudget);
               },
               loading: () => const SizedBox(height: 240),
               error: (e, _) => Text('$e'),

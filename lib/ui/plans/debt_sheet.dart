@@ -9,11 +9,13 @@ import '../../state/providers.dart';
 import '../widgets/day_picker.dart';
 import '../widgets/widgets.dart';
 
-Future<void> showDebtSheet(BuildContext context, {Debt? existing}) => showModalBottomSheet(
+Future<void> showDebtSheet(BuildContext context,
+        {Debt? existing, String? person, String? direction}) =>
+    showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (_) => DebtSheet(existing: existing),
+      builder: (_) => DebtSheet(existing: existing, person: person, direction: direction),
     );
 
 Future<void> showDebtDetail(BuildContext context, int debtId) => showModalBottomSheet(
@@ -29,7 +31,11 @@ Future<DateTime?> _pickDay(BuildContext context, DateTime initial) =>
 /// Create or edit a debt.
 class DebtSheet extends ConsumerStatefulWidget {
   final Debt? existing;
-  const DebtSheet({super.key, this.existing});
+
+  /// Pre-filled when adding another loan for someone already in the list.
+  final String? person;
+  final String? direction;
+  const DebtSheet({super.key, this.existing, this.person, this.direction});
 
   @override
   ConsumerState<DebtSheet> createState() => _DebtSheetState();
@@ -59,6 +65,8 @@ class _DebtSheetState extends ConsumerState<DebtSheet> {
     } else {
       currency = ref.read(settingsProvider).baseCurrency;
       date = DateTime.now();
+      person.text = widget.person ?? '';
+      direction = widget.direction ?? 'owe';
     }
   }
 
@@ -129,12 +137,38 @@ class _DebtSheetState extends ConsumerState<DebtSheet> {
             TextField(
               controller: person,
               textInputAction: TextInputAction.next,
+              onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
                 labelText: S.person,
                 hintText: S.personHint,
                 prefixIcon: Icon(Icons.person_outline_rounded, color: p.muted, size: 20),
               ),
             ),
+            // Names already used, so the same person is spelled the same way
+            // and their loans add up together.
+            Builder(builder: (_) {
+              final typed = person.text.trim();
+              final names = {
+                for (final v in ref.watch(debtsProvider).valueOrNull ?? const <DebtView>[])
+                  v.debt.person.trim()
+              }.where((n) => n != typed && (typed.isEmpty || n.contains(typed))).take(6).toList();
+              if (names.isEmpty) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final n in names)
+                      Pill(
+                        icon: Icons.person_rounded,
+                        label: n,
+                        onTap: () => setState(() => person.text = n),
+                      ),
+                  ],
+                ),
+              );
+            }),
             const SizedBox(height: 12),
             AmountField(
               controller: amount,

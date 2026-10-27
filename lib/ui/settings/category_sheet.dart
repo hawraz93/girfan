@@ -9,8 +9,9 @@ import '../../data/models.dart';
 import '../../state/providers.dart';
 import '../widgets/widgets.dart';
 
-Future<void> showCategorySheet(BuildContext context, {required String kind, Category? existing}) =>
-    showModalBottomSheet(
+/// Returns the new category's id when one was created.
+Future<int?> showCategorySheet(BuildContext context, {required String kind, Category? existing}) =>
+    showModalBottomSheet<int>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -61,13 +62,14 @@ class _CategorySheetState extends ConsumerState<CategorySheet> {
       sort: widget.existing?.sort ?? 0,
     );
     final repo = ref.read(repoProvider);
+    int? newId;
     if (widget.existing != null) {
       await repo.updateCategory(c);
     } else {
-      await repo.insertCategory(c);
+      newId = await repo.insertCategory(c);
     }
     ref.bump();
-    if (mounted) Navigator.pop(context);
+    if (mounted) Navigator.pop(context, newId);
   }
 
   @override

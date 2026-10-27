@@ -219,6 +219,17 @@ class Repo {
     await db.update('transactions', {'rate': rate}, where: 'rate IS NULL');
   }
 
+  /// category_id -> number of entries in the last 90 days (most used first).
+  Future<Map<int, int>> categoryUsage() async {
+    final db = await _db;
+    final since = DateTime.now().subtract(const Duration(days: 90));
+    final key = '${since.year}-${since.month.toString().padLeft(2, '0')}-${since.day.toString().padLeft(2, '0')}';
+    final rows = await db.rawQuery(
+        'SELECT category_id AS c, COUNT(*) AS n FROM transactions WHERE date >= ? GROUP BY category_id',
+        [key]);
+    return {for (final r in rows) r['c'] as int: r['n'] as int};
+  }
+
   Future<int> txCount() async {
     final db = await _db;
     final r = await db.rawQuery('SELECT COUNT(*) AS n FROM transactions');

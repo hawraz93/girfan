@@ -35,6 +35,10 @@ class Settings {
   /// When the last backup file was made (yyyy-MM-dd), or null.
   final String? lastBackup;
 
+  /// Off (default): dinar and dollar are kept apart, never converted.
+  /// On: everything is converted into [baseCurrency] at each entry's rate.
+  final bool mergeCurrencies;
+
   const Settings({
     required this.baseCurrency,
     required this.usdRate,
@@ -43,7 +47,27 @@ class Settings {
     required this.userName,
     this.monthNames = MonthNames.kurdish,
     this.lastBackup,
+    this.mergeCurrencies = false,
   });
+
+  /// Whether an entry in [currency] belongs in totals shown in [view].
+  bool inView(String currency, String view) => mergeCurrencies || currency == view;
+
+  /// [amount] as it counts in [view]: converted when merging, as-is otherwise.
+  double inViewAmount(double amount, String currency, String view, [double? rate]) =>
+      mergeCurrencies ? toBase(amount, currency, rate) : amount;
+
+  /// Totals per currency for [items] (or a single base total when merging).
+  Map<String, double> split<T>(Iterable<T> items, double Function(T) amount,
+      String Function(T) currency, [double? Function(T)? rate]) {
+    final out = <String, double>{};
+    for (final i in items) {
+      final cur = mergeCurrencies ? baseCurrency : currency(i);
+      final v = mergeCurrencies ? toBase(amount(i), currency(i), rate?.call(i)) : amount(i);
+      out[cur] = (out[cur] ?? 0) + v;
+    }
+    return out;
+  }
 
   /// Days since the last backup; null when there has never been one.
   int? get daysSinceBackup => lastBackup == null
@@ -73,6 +97,7 @@ class Settings {
     String? userName,
     MonthNames? monthNames,
     String? lastBackup,
+    bool? mergeCurrencies,
   }) =>
       Settings(
         baseCurrency: baseCurrency ?? this.baseCurrency,
@@ -82,6 +107,7 @@ class Settings {
         userName: userName ?? this.userName,
         monthNames: monthNames ?? this.monthNames,
         lastBackup: lastBackup ?? this.lastBackup,
+        mergeCurrencies: mergeCurrencies ?? this.mergeCurrencies,
       );
 }
 
@@ -101,7 +127,13 @@ class SettingsNotifier extends Notifier<Settings> {
       userName: _p.getString('name') ?? '',
       monthNames: names,
       lastBackup: _p.getString('lastBackup'),
+      mergeCurrencies: _p.getBool('merge') ?? false,
     );
+  }
+
+  Future<void> setMerge(bool v) async {
+    await _p.setBool('merge', v);
+    state = state.copyWith(mergeCurrencies: v);
   }
 
   Future<void> markBackedUp() async {
@@ -117,6 +149,7 @@ class SettingsNotifier extends Notifier<Settings> {
         'name': state.userName,
         'monthNames': state.monthNames.index,
         'theme': state.themeMode.index,
+        'merge': state.mergeCurrencies,
       };
 
   Future<void> importFrom(Map<String, dynamic> m) async {
@@ -125,6 +158,7 @@ class SettingsNotifier extends Notifier<Settings> {
     if (m['name'] is String) await _p.setString('name', m['name'] as String);
     if (m['monthNames'] is int) await _p.setInt('monthNames', m['monthNames'] as int);
     if (m['theme'] is int) await _p.setInt('theme', m['theme'] as int);
+    if (m['merge'] is bool) await _p.setBool('merge', m['merge'] as bool);
     ref.invalidateSelf();
   }
 
@@ -178,6 +212,21 @@ final selectedMonthProvider = StateProvider<String>((_) => currentMonth());
 
 /// Bottom-nav tab, kept outside the widget so it survives a full rebuild.
 final shellTabProvider = StateProvider<int>((_) => 0);
+
+final categoryUsageProvider = FutureProvider<Map<int, int>>((ref) {
+  ref.watch(dbTick);
+  return ref.read(repoProvider).categoryUsage();
+});
+
+/// [cats] with the most used (last 90 days) first; ties keep their order.
+List<Category> byUsage(List<Category> cats, Map<int, int> usage) {
+  final indexed = [for (var i = 0; i < cats.length; i++) (i, cats[i])];
+  indexed.sort((a, b) {
+    final d = (usage[b.$2.id] ?? 0).compareTo(usage[a.$2.id] ?? 0);
+    return d != 0 ? d : a.$1.compareTo(b.$1);
+  });
+  return [for (final e in indexed) e.$2];
+}
 
 final quickProvider = FutureProvider<List<QuickItem>>((ref) {
   ref.watch(dbTick);
@@ -236,11 +285,15 @@ class MonthSummary {
   final List<CatTotal> expenseByCat; // sorted desc
   final List<CatTotal> incomeByCat;
 
-  /// Net amount moved into saving goals this month (base currency).
+  /// Net amount moved into saving goals this month.
   final double saved;
+
+  /// Currency every figure here is in.
+  final String currency;
 
   const MonthSummary({
     required this.month,
+    required this.currency,
     required this.income,
     required this.expense,
     required this.expenseByCat,
@@ -259,20 +312,40 @@ class MonthSummary {
   }
 }
 
+/// The currency the home and analytics screens show. Dinar and dollar are
+/// separate unless merging is on, in which case it is always the base.
+final viewCurrencyProvider = StateProvider<String?>((_) => null);
+
+final effectiveViewProvider = Provider<String>((ref) {
+  final s = ref.watch(settingsProvider);
+  if (s.mergeCurrencies) return s.baseCurrency;
+  return ref.watch(viewCurrencyProvider) ?? s.baseCurrency;
+});
+
+/// Currencies used this month (to decide whether to show the switch).
+final monthCurrenciesProvider = FutureProvider<Set<String>>((ref) async {
+  final txs = await ref.watch(monthTxProvider.future);
+  return {for (final t in txs) t.currency};
+});
+
 final monthSummaryProvider = FutureProvider<MonthSummary>((ref) async {
   final month = ref.watch(selectedMonthProvider);
   final settings = ref.watch(settingsProvider);
-  final txs = await ref.watch(monthTxProvider.future);
+  final view = ref.watch(effectiveViewProvider);
+  final txs = (await ref.watch(monthTxProvider.future))
+      .where((t) => settings.inView(t.currency, view));
   final cats = await ref.watch(categoriesProvider.future);
   final savedRows = await ref.watch(_monthSavedRowsProvider.future);
   final byId = {for (final c in cats) c.id: c};
-  final saved = savedRows.fold(
-      0.0, (a, r) => a + settings.toBase((r['s'] as num).toDouble(), r['currency'] as String));
+  final saved = savedRows
+      .where((r) => settings.inView(r['currency'] as String, view))
+      .fold(0.0, (a, r) =>
+          a + settings.inViewAmount((r['s'] as num).toDouble(), r['currency'] as String, view));
 
   double income = 0, expense = 0;
   final exp = <int, double>{}, inc = <int, double>{};
   for (final t in txs) {
-    final v = settings.txBase(t);
+    final v = settings.inViewAmount(t.amount, t.currency, view, t.rate);
     if (t.isExpense) {
       expense += v;
       exp[t.categoryId] = (exp[t.categoryId] ?? 0) + v;
@@ -292,6 +365,7 @@ final monthSummaryProvider = FutureProvider<MonthSummary>((ref) async {
 
   return MonthSummary(
     month: month,
+    currency: view,
     income: income,
     expense: expense,
     expenseByCat: build(exp),
@@ -392,13 +466,16 @@ final monthlySeriesProvider = FutureProvider<List<MonthTotal>>((ref) async {
   ref.watch(dbTick);
   final month = ref.watch(selectedMonthProvider);
   final settings = ref.watch(settingsProvider);
+  final view = ref.watch(effectiveViewProvider);
   final from = addMonths(month, -5);
   final rows = await ref.read(repoProvider).rawMonthlySums(from, month);
   final inc = <String, double>{}, exp = <String, double>{};
   for (final r in rows) {
     final m = r['m'] as String;
-    final v = settings.toBase(
-        (r['s'] as num).toDouble(), r['currency'] as String, (r['rate'] as num?)?.toDouble());
+    final cur = r['currency'] as String;
+    if (!settings.inView(cur, view)) continue;
+    final v = settings.inViewAmount(
+        (r['s'] as num).toDouble(), cur, view, (r['rate'] as num?)?.toDouble());
     if (r['kind'] == 'expense') {
       exp[m] = (exp[m] ?? 0) + v;
     } else {
