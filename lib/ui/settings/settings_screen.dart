@@ -53,6 +53,12 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               ),
               _Tile(
+                icon: Icons.merge_type_rounded,
+                title: S.mergeCurrencies,
+                subtitle: s.mergeCurrencies ? S.mergeOn : S.mergeOff,
+                trailing: Switch(value: s.mergeCurrencies, onChanged: n.setMerge),
+              ),
+              _Tile(
                 icon: Icons.currency_exchange_rounded,
                 title: S.usdRate,
                 subtitle: S.rateNote,

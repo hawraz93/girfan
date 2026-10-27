@@ -205,4 +205,21 @@ class S {
   static const restoreDone = 'داتاکان گەڕێنرانەوە ✓';
   static const restoreBad = 'ئەم فایلە باکئەپی گیرفان نییە';
   static const txs = 'مامەڵە';
+
+  // Currencies kept apart / merged
+  static const mergeCurrencies = 'دینار و دۆلار تێکەڵ بکە';
+  static const mergeOff = 'جیان: دینار و دۆلار هەریەکە حیسابی خۆی هەیە';
+  static const mergeOn = 'تێکەڵن: دۆلار بە نرخی هەر مامەڵەیەک دەگۆڕدرێت بۆ دراوی سەرەکی';
+
+  // Categories
+  static const newCategoryShort = 'نوێ';
+
+  // Debts by person
+  static const theyOweMe = 'قەرزم لایەتی';
+  static const iOweThem = 'قەرزداریم';
+  static const even = 'یەکسانە';
+  static const moreLoan = 'قەرزی زیاتر';
+  static const borrowAgain = 'دیسان قەرزم لێکرد';
+  static const lendAgain = 'دیسان قەرزم دایە';
+  static String loansCount(int n) => '$n قەرز';
 }

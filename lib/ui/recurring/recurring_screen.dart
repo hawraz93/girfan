@@ -48,12 +48,10 @@ class RecurringTab extends ConsumerWidget {
                     subtitle: S.noRecurringHint,
                   );
                 }
-                final fixedExp = list
-                    .where((r) => r.isExpense && r.coversMonth(month))
-                    .fold(0.0, (a, r) => a + s.toBase(r.amount, r.currency));
-                final fixedInc = list
-                    .where((r) => !r.isExpense && r.coversMonth(month))
-                    .fold(0.0, (a, r) => a + s.toBase(r.amount, r.currency));
+                final fixedExp = s.split(list.where((r) => r.isExpense && r.coversMonth(month)),
+                    (r) => r.amount, (r) => r.currency);
+                final fixedInc = s.split(list.where((r) => !r.isExpense && r.coversMonth(month)),
+                    (r) => r.amount, (r) => r.currency);
                 return Column(
                   children: [
                     _TotalsCard(fixedExp, fixedInc, s.baseCurrency),
@@ -80,14 +78,14 @@ class RecurringTab extends ConsumerWidget {
 }
 
 class _TotalsCard extends StatelessWidget {
-  final double exp, inc;
+  final Map<String, double> exp, inc;
   final String cur;
   const _TotalsCard(this.exp, this.inc, this.cur);
 
   @override
   Widget build(BuildContext context) {
     final p = context.p;
-    Widget col(String label, double v, Color c) => Expanded(
+    Widget col(String label, Map<String, double> v, Color c) => Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -96,7 +94,7 @@ class _TotalsCard extends StatelessWidget {
               FittedBox(
                 fit: BoxFit.scaleDown,
                 alignment: AlignmentDirectional.centerStart,
-                child: Text(money(v, cur),
+                child: Text(moneyMulti(v, fallback: cur),
                     style: TextStyle(
                         color: c, fontWeight: FontWeight.w800, fontSize: 17, fontFeatures: kTabular)),
               ),

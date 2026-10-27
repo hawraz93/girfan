@@ -7,6 +7,7 @@ import '../../core/strings.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../state/providers.dart';
+import '../settings/category_sheet.dart';
 import '../widgets/widgets.dart';
 
 /// One-tap buttons on the home screen. Tap records the item for today
@@ -250,7 +251,9 @@ class _QuickSheetState extends ConsumerState<QuickSheet> {
   Widget build(BuildContext context) {
     final p = context.p;
     final all = ref.watch(categoriesProvider).valueOrNull ?? const <Category>[];
-    final cats = all.where((c) => c.kind == kind && (!c.archived || c.id == categoryId)).toList();
+    final cats = byUsage(
+        all.where((c) => c.kind == kind && (!c.archived || c.id == categoryId)).toList(),
+        ref.watch(categoryUsageProvider).valueOrNull ?? const {});
     final effective = categoryId ?? (cats.isNotEmpty ? cats.first.id : null);
 
     return Padding(
@@ -321,6 +324,14 @@ class _QuickSheetState extends ConsumerState<QuickSheet> {
                     selected: c.id == effective,
                     onTap: () => setState(() => categoryId = c.id),
                   ),
+                Pill(
+                  icon: Icons.add_rounded,
+                  label: S.newCategoryShort,
+                  onTap: () async {
+                    final id = await showCategorySheet(context, kind: kind);
+                    if (id != null && mounted) setState(() => categoryId = id);
+                  },
+                ),
               ],
             ),
             const SizedBox(height: 20),

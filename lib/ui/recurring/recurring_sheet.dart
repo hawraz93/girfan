@@ -8,6 +8,7 @@ import '../../core/strings.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../state/providers.dart';
+import '../settings/category_sheet.dart';
 import '../widgets/month_picker.dart';
 import '../widgets/widgets.dart';
 
@@ -150,7 +151,9 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
     final p = context.p;
     final s = ref.watch(settingsProvider);
     final allCats = ref.watch(categoriesProvider).valueOrNull ?? const <Category>[];
-    final cats = allCats.where((c) => c.kind == kind && (!c.archived || c.id == categoryId)).toList();
+    final cats = byUsage(
+        allCats.where((c) => c.kind == kind && (!c.archived || c.id == categoryId)).toList(),
+        ref.watch(categoryUsageProvider).valueOrNull ?? const {});
     final effectiveCat = categoryId ?? (cats.isNotEmpty ? cats.first.id : null);
     final n = hasEnd ? installmentsBetween(startMonth, endMonth, interval) : 0;
 
@@ -247,6 +250,19 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
                       pickedCategory = true;
                     }),
                   ),
+                Pill(
+                  icon: Icons.add_rounded,
+                  label: S.newCategoryShort,
+                  onTap: () async {
+                    final id = await showCategorySheet(context, kind: kind);
+                    if (id != null && mounted) {
+                      setState(() {
+                        categoryId = id;
+                        pickedCategory = true;
+                      });
+                    }
+                  },
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -320,7 +336,7 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
               onPressed: () => _save(cats),
               child: Text(widget.existing != null ? S.save : S.add),
             ),
-            if (currency != s.baseCurrency)
+            if (s.mergeCurrencies && currency != s.baseCurrency)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(

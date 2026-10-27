@@ -149,6 +149,8 @@ class _Header extends StatelessWidget {
             ],
           ),
         ),
+        const CurrencySwitch(),
+        const SizedBox(width: 6),
         const MonthPill(),
       ],
     );
@@ -164,7 +166,7 @@ class HeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.p;
-    final cur = settings.baseCurrency;
+    final cur = sum.currency;
     final top = sum.expenseByCat.take(5).toList();
     final other = sum.expense - top.fold(0.0, (a, b) => a + b.total);
     final negative = sum.net < 0;
@@ -545,12 +547,11 @@ class _TxGroups extends ConsumerWidget {
                     style: TextStyle(color: p.muted, fontWeight: FontWeight.w700, fontSize: 12.5)),
                 const Spacer(),
                 Builder(builder: (_) {
-                  final exp = e.value
-                      .where((t) => t.isExpense)
-                      .fold(0.0, (a, t) => a + s.txBase(t));
-                  return exp == 0
+                  final exp = s.split(e.value.where((t) => t.isExpense), (t) => t.amount,
+                      (t) => t.currency, (t) => t.rate);
+                  return exp.values.every((v) => v == 0)
                       ? const SizedBox.shrink()
-                      : Text('−${money(exp, s.baseCurrency)}',
+                      : Text('−${moneyMulti(exp, fallback: s.baseCurrency)}',
                           style: TextStyle(color: p.muted, fontSize: 12, fontFeatures: kTabular));
                 }),
               ],

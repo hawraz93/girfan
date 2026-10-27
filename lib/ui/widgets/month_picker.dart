@@ -144,3 +144,53 @@ class MonthPill extends ConsumerWidget {
     );
   }
 }
+
+/// Dinar / dollar switch for the home and analytics screens. Hidden when
+/// currencies are merged or only one currency is used this month.
+class CurrencySwitch extends ConsumerWidget {
+  const CurrencySwitch({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final s = ref.watch(settingsProvider);
+    final view = ref.watch(effectiveViewProvider);
+    final used = ref.watch(monthCurrenciesProvider).valueOrNull ?? const <String>{};
+    if (s.mergeCurrencies || (used.length < 2 && (used.isEmpty || used.contains(view)))) {
+      return const SizedBox.shrink();
+    }
+    final p = context.p;
+    Widget seg(String cur, String label) {
+      final selected = cur == view;
+      return GestureDetector(
+        onTap: () => ref.read(viewCurrencyProvider.notifier).state = cur,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+          decoration: BoxDecoration(
+            color: selected ? p.accent : Colors.transparent,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Text(label,
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 12.5,
+                color: selected ? Palette.onAccent : p.muted,
+              )),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: p.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: p.outline),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [seg('IQD', 'د.ع'), seg('USD', r'$')],
+      ),
+    );
+  }
+}

@@ -187,6 +187,22 @@ Future<void> seedDemo(Repo repo) async {
       id: 0, debtId: d1, amount: 200000, date: dateKey(now.subtract(const Duration(days: 10)))));
   await repo.insertDebt(Debt(
     id: 0,
+    person: 'کاک ئازاد',
+    direction: 'owe',
+    amount: 100000,
+    currency: 'IQD',
+    date: dateKey(now.subtract(const Duration(days: 5))),
+  ));
+  await repo.insertDebt(Debt(
+    id: 0,
+    person: 'کاک ئازاد',
+    direction: 'lent',
+    amount: 50,
+    currency: 'USD',
+    date: dateKey(now.subtract(const Duration(days: 2))),
+  ));
+  await repo.insertDebt(Debt(
+    id: 0,
     person: 'سەرهەنگ',
     direction: 'lent',
     amount: 150,

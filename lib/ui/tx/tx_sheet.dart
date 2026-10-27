@@ -10,6 +10,7 @@ import '../../core/strings.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../state/providers.dart';
+import '../settings/category_sheet.dart';
 import '../widgets/day_picker.dart';
 import '../widgets/widgets.dart';
 
@@ -222,9 +223,9 @@ class _TxSheetState extends ConsumerState<TxSheet> {
     final p = context.p;
     final isExp = kind == 'expense';
     final allCats = ref.watch(categoriesProvider).valueOrNull ?? const <Category>[];
-    final cats = allCats
-        .where((c) => c.kind == kind && (!c.archived || c.id == categoryId))
-        .toList();
+    final cats = byUsage(
+        allCats.where((c) => c.kind == kind && (!c.archived || c.id == categoryId)).toList(),
+        ref.watch(categoryUsageProvider).valueOrNull ?? const {});
     final effectiveCat = categoryId ?? (cats.isNotEmpty ? cats.first.id : null);
 
     final h = MediaQuery.sizeOf(context).height;
@@ -340,7 +341,8 @@ class _TxSheetState extends ConsumerState<TxSheet> {
                         ],
                       ),
                     ),
-                    if (currency != ref.watch(settingsProvider).baseCurrency) ...[
+                    if (ref.watch(settingsProvider).mergeCurrencies &&
+                        currency != ref.watch(settingsProvider).baseCurrency) ...[
                       const SizedBox(height: 10),
                       Center(
                         child: Pill(
@@ -360,9 +362,15 @@ class _TxSheetState extends ConsumerState<TxSheet> {
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         clipBehavior: Clip.none,
-                        itemCount: cats.length,
+                        itemCount: cats.length + 1,
                         separatorBuilder: (_, __) => const SizedBox(width: 6),
-                        itemBuilder: (_, i) => _CatChip(
+                        itemBuilder: (_, i) => i == cats.length
+                            ? _AddCatChip(onTap: () async {
+                                noteFocus.unfocus();
+                                final id = await showCategorySheet(context, kind: kind);
+                                if (id != null && mounted) setState(() => categoryId = id);
+                              })
+                            : _CatChip(
                           cats[i],
                           selected: cats[i].id == effectiveCat,
                           onTap: () {
@@ -506,6 +514,38 @@ class _CatChip extends StatelessWidget {
                 color: selected ? p.text : p.muted,
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AddCatChip extends StatelessWidget {
+  final VoidCallback onTap;
+  const _AddCatChip({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.p;
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        width: 70,
+        child: Column(
+          children: [
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: p.accent, width: 1.5),
+              ),
+              child: Icon(Icons.add_rounded, color: p.accent, size: 24),
+            ),
+            const SizedBox(height: 6),
+            Text(S.newCategoryShort,
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: p.accent)),
           ],
         ),
       ),
