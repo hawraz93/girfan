@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
-/// Public repo that CI publishes every release APK to.
-const kReleasesRepo = 'hawraz93/girfan-releases';
+/// Public repo whose GitHub releases carry every APK.
+const kReleasesRepo = 'hawraz93/girfan';
 
 class AppVersion {
   final String name; // 1.0.0
