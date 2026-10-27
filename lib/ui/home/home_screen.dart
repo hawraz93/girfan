@@ -11,7 +11,9 @@ import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../state/providers.dart';
 import '../tx/tx_sheet.dart';
+import '../../data/backup.dart';
 import '../update/update_sheet.dart';
+import 'quick_row.dart';
 import '../widgets/month_picker.dart';
 import '../widgets/widgets.dart';
 
@@ -36,6 +38,7 @@ class HomeScreen extends ConsumerWidget {
             _Header(name: s.userName),
             const SizedBox(height: 18),
             const UpdateBanner(),
+            const _BackupBanner(),
             summary.when(
               data: (sum) => HeroCard(sum: sum, settings: s)
                   .animate(key: ValueKey(sum.month))
@@ -44,6 +47,7 @@ class HomeScreen extends ConsumerWidget {
               loading: () => const _HeroSkeleton(),
               error: (e, _) => Text('$e'),
             ),
+            const QuickRow(),
             due.maybeWhen(
               data: (items) {
                 final pending = items.where((d) => !d.paid).toList();
@@ -75,6 +79,45 @@ class HomeScreen extends ConsumerWidget {
               loading: () => const SizedBox(height: 80),
               error: (e, _) => Text('$e'),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BackupBanner extends ConsumerWidget {
+  const _BackupBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final due = ref.watch(backupDueProvider).valueOrNull ?? false;
+    if (!due) return const SizedBox.shrink();
+    final p = context.p;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: SoftCard(
+        color: p.coral.withValues(alpha: 0.10),
+        onTap: () async {
+          final n = ref.read(settingsProvider.notifier);
+          try {
+            if (await shareBackup(ref.read(repoProvider), n.exportable())) {
+              await n.markBackedUp();
+              if (context.mounted) snack(context, S.backupDone);
+            }
+          } catch (e) {
+            if (context.mounted) snack(context, '$e');
+          }
+        },
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          children: [
+            Icon(Icons.cloud_upload_outlined, color: p.coral),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Text(S.backupDue, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+            ),
+            Text(S.backupNow, style: TextStyle(color: p.coral, fontWeight: FontWeight.w800)),
           ],
         ),
       ),
@@ -504,7 +547,7 @@ class _TxGroups extends ConsumerWidget {
                 Builder(builder: (_) {
                   final exp = e.value
                       .where((t) => t.isExpense)
-                      .fold(0.0, (a, t) => a + s.toBase(t.amount, t.currency));
+                      .fold(0.0, (a, t) => a + s.txBase(t));
                   return exp == 0
                       ? const SizedBox.shrink()
                       : Text('−${money(exp, s.baseCurrency)}',

@@ -28,15 +28,17 @@ class AppDb {
     }
     _db = await openDatabase(
       join(dir, 'masruf.db'),
-      version: 3,
+      version: 4,
       onCreate: (db, version) async {
         await _create(db, version);
         await _v2(db);
         await _v3(db);
+        await _v4(db);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) await _v2(db);
         if (oldVersion < 3) await _v3(db);
+        if (oldVersion < 4) await _v4(db);
       },
     );
     return _db!;
@@ -138,6 +140,34 @@ class AppDb {
     await db.execute('CREATE INDEX idx_debt_pay ON debt_payments(debt_id)');
     await db.execute('CREATE INDEX idx_goal_dep ON goal_deposits(goal_id)');
   }
+
+  /// v4: the dollar rate each transaction was recorded at, and quick buttons.
+  static Future<void> _v4(Database db) async {
+    await db.execute('ALTER TABLE transactions ADD COLUMN rate REAL');
+    await db.execute('''
+      CREATE TABLE quick(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        amount REAL NOT NULL,
+        currency TEXT NOT NULL,
+        category_id INTEGER NOT NULL,
+        kind TEXT NOT NULL DEFAULT 'expense',
+        sort INTEGER NOT NULL DEFAULT 0
+      )
+    ''');
+  }
+
+  /// Table names in restore order.
+  static const tables = [
+    'categories',
+    'transactions',
+    'recurrings',
+    'debts',
+    'debt_payments',
+    'goals',
+    'goal_deposits',
+    'quick',
+  ];
 
   /// v3: a category for loans and installments, which had no obvious home.
   static Future<void> _v3(Database db) async {

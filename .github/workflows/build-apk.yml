@@ -41,7 +41,9 @@ jobs:
         run: flutter pub get
 
       - name: Analyze
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+        run: |
+          set -o pipefail
+          flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee /tmp/analyze.log
 
       # Sign with the real release key so every APK can update the installed
       # app without losing data. The keystore is kept in the repo encrypted
@@ -82,6 +84,7 @@ jobs:
         run: |
           mkdir -p /tmp/logs && cd /tmp/logs
           tail -n 300 /tmp/build.log > build-tail.log 2>/dev/null || echo "no log" > build-tail.log
+          cp /tmp/analyze.log analyze.log 2>/dev/null || true
           git init -q -b ci-logs
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"

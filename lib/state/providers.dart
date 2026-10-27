@@ -32,6 +32,9 @@ class Settings {
   final String userName;
   final MonthNames monthNames;
 
+  /// When the last backup file was made (yyyy-MM-dd), or null.
+  final String? lastBackup;
+
   const Settings({
     required this.baseCurrency,
     required this.usdRate,
@@ -39,15 +42,27 @@ class Settings {
     required this.pin,
     required this.userName,
     this.monthNames = MonthNames.kurdish,
+    this.lastBackup,
   });
+
+  /// Days since the last backup; null when there has never been one.
+  int? get daysSinceBackup => lastBackup == null
+      ? null
+      : DateTime.now().difference(dateFromKey(lastBackup!)).inDays;
 
   String get otherCurrency => baseCurrency == 'IQD' ? 'USD' : 'IQD';
 
-  double toBase(double amount, String currency) {
+  /// Converts to the base currency, at [rate] (IQD per USD) when given,
+  /// otherwise at today's rate.
+  double toBase(double amount, String currency, [double? rate]) {
     if (currency == baseCurrency) return amount;
-    if (baseCurrency == 'IQD') return amount * usdRate; // USD -> IQD
-    return usdRate == 0 ? 0 : amount / usdRate; // IQD -> USD
+    final r = (rate == null || rate <= 0) ? usdRate : rate;
+    if (baseCurrency == 'IQD') return amount * r; // USD -> IQD
+    return r == 0 ? 0 : amount / r; // IQD -> USD
   }
+
+  /// A transaction in base currency, at the rate it was recorded with.
+  double txBase(Tx t) => toBase(t.amount, t.currency, t.rate);
 
   Settings copyWith({
     String? baseCurrency,
@@ -57,6 +72,7 @@ class Settings {
     bool clearPin = false,
     String? userName,
     MonthNames? monthNames,
+    String? lastBackup,
   }) =>
       Settings(
         baseCurrency: baseCurrency ?? this.baseCurrency,
@@ -65,6 +81,7 @@ class Settings {
         pin: clearPin ? null : (pin ?? this.pin),
         userName: userName ?? this.userName,
         monthNames: monthNames ?? this.monthNames,
+        lastBackup: lastBackup ?? this.lastBackup,
       );
 }
 
@@ -83,7 +100,32 @@ class SettingsNotifier extends Notifier<Settings> {
       pin: _p.getString('pin'),
       userName: _p.getString('name') ?? '',
       monthNames: names,
+      lastBackup: _p.getString('lastBackup'),
     );
+  }
+
+  Future<void> markBackedUp() async {
+    final today = dateKey(DateTime.now());
+    await _p.setString('lastBackup', today);
+    state = state.copyWith(lastBackup: today);
+  }
+
+  /// Settings worth carrying in a backup file (not the PIN).
+  Map<String, Object?> exportable() => {
+        'base': state.baseCurrency,
+        'usdRate': state.usdRate,
+        'name': state.userName,
+        'monthNames': state.monthNames.index,
+        'theme': state.themeMode.index,
+      };
+
+  Future<void> importFrom(Map<String, dynamic> m) async {
+    if (m['base'] is String) await _p.setString('base', m['base'] as String);
+    if (m['usdRate'] is num) await _p.setDouble('usdRate', (m['usdRate'] as num).toDouble());
+    if (m['name'] is String) await _p.setString('name', m['name'] as String);
+    if (m['monthNames'] is int) await _p.setInt('monthNames', m['monthNames'] as int);
+    if (m['theme'] is int) await _p.setInt('theme', m['theme'] as int);
+    ref.invalidateSelf();
   }
 
   Future<void> setMonthNames(MonthNames m) async {
@@ -136,6 +178,19 @@ final selectedMonthProvider = StateProvider<String>((_) => currentMonth());
 
 /// Bottom-nav tab, kept outside the widget so it survives a full rebuild.
 final shellTabProvider = StateProvider<int>((_) => 0);
+
+final quickProvider = FutureProvider<List<QuickItem>>((ref) {
+  ref.watch(dbTick);
+  return ref.read(repoProvider).quickItems();
+});
+
+/// Whether to nudge for a backup: there is data and none in the last week.
+final backupDueProvider = FutureProvider<bool>((ref) async {
+  ref.watch(dbTick);
+  final days = ref.watch(settingsProvider.select((s) => s.daysSinceBackup));
+  if (days != null && days < 7) return false;
+  return await ref.read(repoProvider).txCount() >= 5;
+});
 
 final categoriesProvider = FutureProvider<List<Category>>((ref) {
   ref.watch(dbTick);
@@ -217,7 +272,7 @@ final monthSummaryProvider = FutureProvider<MonthSummary>((ref) async {
   double income = 0, expense = 0;
   final exp = <int, double>{}, inc = <int, double>{};
   for (final t in txs) {
-    final v = settings.toBase(t.amount, t.currency);
+    final v = settings.txBase(t);
     if (t.isExpense) {
       expense += v;
       exp[t.categoryId] = (exp[t.categoryId] ?? 0) + v;
@@ -342,7 +397,8 @@ final monthlySeriesProvider = FutureProvider<List<MonthTotal>>((ref) async {
   final inc = <String, double>{}, exp = <String, double>{};
   for (final r in rows) {
     final m = r['m'] as String;
-    final v = settings.toBase((r['s'] as num).toDouble(), r['currency'] as String);
+    final v = settings.toBase(
+        (r['s'] as num).toDouble(), r['currency'] as String, (r['rate'] as num?)?.toDouble());
     if (r['kind'] == 'expense') {
       exp[m] = (exp[m] ?? 0) + v;
     } else {

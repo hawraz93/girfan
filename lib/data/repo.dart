@@ -85,10 +85,10 @@ class Repo {
   Future<List<Map<String, Object?>>> rawMonthlySums(String from, String to) async {
     final db = await _db;
     return db.rawQuery('''
-      SELECT substr(date, 1, 7) AS m, kind, currency, SUM(amount) AS s
+      SELECT substr(date, 1, 7) AS m, kind, currency, rate, SUM(amount) AS s
       FROM transactions
       WHERE substr(date, 1, 7) BETWEEN ? AND ?
-      GROUP BY m, kind, currency
+      GROUP BY m, kind, currency, rate
     ''', [from, to]);
   }
 
@@ -210,5 +210,73 @@ class Repo {
       WHERE substr(d.date, 1, 7) BETWEEN ? AND ?
       GROUP BY m, g.currency
     ''', [from, to]);
+  }
+
+  /// Gives rows recorded before rates were stored the rate in use now, so
+  /// changing the rate later leaves them as they are.
+  Future<void> freezeMissingRates(double rate) async {
+    final db = await _db;
+    await db.update('transactions', {'rate': rate}, where: 'rate IS NULL');
+  }
+
+  Future<int> txCount() async {
+    final db = await _db;
+    final r = await db.rawQuery('SELECT COUNT(*) AS n FROM transactions');
+    return (r.first['n'] as int?) ?? 0;
+  }
+
+  // ---------- quick buttons ----------
+
+  Future<List<QuickItem>> quickItems() async {
+    final db = await _db;
+    final rows = await db.query('quick', orderBy: 'sort ASC, id ASC');
+    return rows.map(QuickItem.fromMap).toList();
+  }
+
+  Future<int> insertQuick(QuickItem q) async {
+    final db = await _db;
+    final r = await db.rawQuery('SELECT MAX(sort) AS m FROM quick');
+    final max = (r.first['m'] as int?) ?? 0;
+    return db.insert('quick', {...q.toMap(), 'sort': max + 1});
+  }
+
+  Future<void> updateQuick(QuickItem q) async {
+    final db = await _db;
+    await db.update('quick', q.toMap(), where: 'id = ?', whereArgs: [q.id]);
+  }
+
+  Future<void> deleteQuick(int id) async {
+    final db = await _db;
+    await db.delete('quick', where: 'id = ?', whereArgs: [id]);
+  }
+
+  // ---------- backup ----------
+
+  /// Every row of every table, for a backup file.
+  Future<Map<String, List<Map<String, Object?>>>> dumpAll() async {
+    final db = await _db;
+    return {for (final t in AppDb.tables) t: await db.query(t)};
+  }
+
+  /// Replaces all data with [tables] from a backup. Columns the current
+  /// schema does not know are dropped; missing ones take their defaults.
+  Future<void> restoreAll(Map<String, dynamic> tables) async {
+    final db = await _db;
+    await db.transaction((txn) async {
+      for (final t in AppDb.tables) {
+        final cols = {
+          for (final c in await txn.rawQuery('PRAGMA table_info($t)')) c['name'] as String
+        };
+        await txn.delete(t);
+        final rows = (tables[t] as List?) ?? const [];
+        for (final r in rows) {
+          final row = <String, Object?>{
+            for (final e in (r as Map).entries)
+              if (cols.contains(e.key)) e.key as String: e.value as Object?
+          };
+          if (row.isNotEmpty) await txn.insert(t, row);
+        }
+      }
+    });
   }
 }
