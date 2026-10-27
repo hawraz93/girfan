@@ -170,4 +170,39 @@ class S {
   static const msArabic = 'عەرەبی';
   static const example = 'نموونە';
   static const pickDay = 'بەروار هەڵبژێرە';
+
+  // Quick buttons
+  static const quick = 'خێرا';
+  static const quickHint = 'کرتە = تۆمار · ڕاگرتن = دەستکاری';
+  static const quickFirst = 'دوگمەی خێرا زیاد بکە';
+  static const newQuick = 'دوگمەی خێرای نوێ';
+  static const editQuick = 'دەستکاری دوگمەی خێرا';
+  static const quickNameHint = 'بۆ نموونە: نان، بەنزین، چای';
+  static const saveAsQuick = 'پاشەکەوت وەک دوگمەی خێرا';
+  static const quickSaved = 'وەک دوگمەی خێرا پاشەکەوت کرا';
+  static const recorded = 'تۆمار کرا';
+  static const undo = 'گەڕانەوە';
+
+  // Rate per transaction
+  static const rateThisTx = 'نرخی دۆلار بۆ ئەم مامەڵەیە';
+  static const rateNote = 'مامەڵە کۆنەکان بە نرخی کاتی خۆیان دەمێننەوە';
+
+  // Backup
+  static const backup = 'باکئەپ';
+  static const backupNow = 'باکئەپکردن';
+  static const backupHint = 'فایلەکە بنێرە بۆ Google Drive یان WhatsAppـی خۆت';
+  static const restore = 'گەڕاندنەوە لە باکئەپ';
+  static const restoreHint = 'فایلێکی باکئەپی گیرفان هەڵبژێرە';
+  static const never = 'هەرگیز';
+  static String lastBackupLabel(int? days) => days == null
+      ? 'دوایین باکئەپ: هەرگیز'
+      : days == 0
+          ? 'دوایین باکئەپ: ئەمڕۆ'
+          : 'دوایین باکئەپ: $days ڕۆژ لەمەوبەر';
+  static const backupDone = 'باکئەپ کرا ✓';
+  static const backupDue = 'باکئەپت نەکردووە، داتاکانت بپارێزە';
+  static const restoreConfirm = 'هەموو داتای ئێستا دەسڕێتەوە و داتای باکئەپەکە دادەنرێت. بەردەوام دەبیت؟';
+  static const restoreDone = 'داتاکان گەڕێنرانەوە ✓';
+  static const restoreBad = 'ئەم فایلە باکئەپی گیرفان نییە';
+  static const txs = 'مامەڵە';
 }

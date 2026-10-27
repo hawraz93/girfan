@@ -44,6 +44,7 @@ class _TxSheetState extends ConsumerState<TxSheet> {
   String raw = '';
   int? categoryId;
   late DateTime date;
+  late double rate;
   final note = TextEditingController();
   final noteFocus = FocusNode();
 
@@ -53,6 +54,7 @@ class _TxSheetState extends ConsumerState<TxSheet> {
     final s = ref.read(settingsProvider);
     final e = widget.existing;
     final r = widget.fromRecurring;
+    rate = e?.rate ?? s.usdRate;
     if (e != null) {
       kind = e.kind;
       currency = e.currency;
@@ -164,6 +166,7 @@ class _TxSheetState extends ConsumerState<TxSheet> {
       note: note.text.trim(),
       recurringId: e?.recurringId ?? widget.fromRecurring?.id,
       period: e?.period ?? widget.period,
+      rate: rate,
     );
     if (e != null) {
       await repo.updateTx(tx);
@@ -172,6 +175,39 @@ class _TxSheetState extends ConsumerState<TxSheet> {
     }
     ref.bump();
     if (mounted) Navigator.pop(context);
+  }
+
+  Future<void> _editRate() async {
+    final v = await textPrompt(
+      context,
+      title: S.rateThisTx,
+      initial: rate.toStringAsFixed(0),
+      keyboard: TextInputType.number,
+    );
+    final r = double.tryParse((v ?? '').replaceAll(',', ''));
+    if (r != null && r > 0) setState(() => rate = r);
+  }
+
+  /// Saves the current amount + category + note as a home-screen button.
+  Future<void> _saveQuick(List<Category> cats) async {
+    final catId = categoryId ?? (cats.isNotEmpty ? cats.first.id : null);
+    if (amount <= 0 || catId == null) {
+      snack(context, '${S.amount} ${S.required}');
+      return;
+    }
+    final name = note.text.trim().isNotEmpty
+        ? note.text.trim()
+        : cats.firstWhere((c) => c.id == catId).name;
+    await ref.read(repoProvider).insertQuick(QuickItem(
+          id: 0,
+          name: name,
+          amount: amount,
+          currency: currency,
+          categoryId: catId,
+          kind: kind,
+        ));
+    ref.bump();
+    if (mounted) snack(context, '«$name» ${S.quickSaved}');
   }
 
   Future<void> _delete() async {
@@ -224,6 +260,12 @@ class _TxSheetState extends ConsumerState<TxSheet> {
                         overflow: TextOverflow.ellipsis,
                         style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                   ),
+                  if (widget.existing == null && widget.fromRecurring == null)
+                    IconButton(
+                      tooltip: S.saveAsQuick,
+                      onPressed: () => _saveQuick(cats),
+                      icon: Icon(Icons.bolt_rounded, color: p.accent),
+                    ),
                   if (widget.existing != null)
                     IconButton(
                       onPressed: _delete,
@@ -298,6 +340,17 @@ class _TxSheetState extends ConsumerState<TxSheet> {
                         ],
                       ),
                     ),
+                    if (currency != ref.watch(settingsProvider).baseCurrency) ...[
+                      const SizedBox(height: 10),
+                      Center(
+                        child: Pill(
+                          icon: Icons.currency_exchange_rounded,
+                          label:
+                              '\$1 = ${moneyNumber(rate, 'IQD')} · ≈ ${money(ref.watch(settingsProvider).toBase(amount, currency, rate), ref.watch(settingsProvider).baseCurrency)}',
+                          onTap: _editRate,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 22),
                     Text(isExp ? S.category : S.source,
                         style: TextStyle(color: p.muted, fontSize: 12.5, fontWeight: FontWeight.w700)),

@@ -16,6 +16,9 @@ Future<void> main() async {
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   final prefs = await SharedPreferences.getInstance();
   if (_demo) await seedDemo(Repo());
+  // Older rows have no stored rate; pin them to today's so a later rate
+  // change does not rewrite past months.
+  await Repo().freezeMissingRates(prefs.getDouble('usdRate') ?? 1500);
   runApp(
     ProviderScope(
       overrides: [prefsProvider.overrideWithValue(prefs)],

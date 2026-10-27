@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/format.dart';
 import '../../core/strings.dart';
 import '../../core/theme.dart';
+import '../../data/backup.dart';
 import '../../data/export.dart';
 import '../../state/providers.dart';
 import '../../state/update.dart';
@@ -54,6 +55,7 @@ class SettingsScreen extends ConsumerWidget {
               _Tile(
                 icon: Icons.currency_exchange_rounded,
                 title: S.usdRate,
+                subtitle: S.rateNote,
                 value: moneyNumber(s.usdRate, 'IQD'),
                 onTap: () async {
                   final v = await textPrompt(
@@ -137,6 +139,62 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
+              ),
+            ]),
+            _Group(S.backup, [
+              _Tile(
+                icon: Icons.cloud_upload_outlined,
+                title: S.backupNow,
+                subtitle: '${S.lastBackupLabel(s.daysSinceBackup)} · ${S.backupHint}',
+                onTap: () async {
+                  try {
+                    if (await shareBackup(ref.read(repoProvider), n.exportable())) {
+                      await n.markBackedUp();
+                      if (context.mounted) snack(context, S.backupDone);
+                    }
+                  } catch (e) {
+                    if (context.mounted) snack(context, '$e');
+                  }
+                },
+              ),
+              _Tile(
+                icon: Icons.settings_backup_restore_rounded,
+                title: S.restore,
+                subtitle: S.restoreHint,
+                onTap: () async {
+                  final BackupFile? b;
+                  try {
+                    b = await pickBackup();
+                  } on FormatException {
+                    if (context.mounted) snack(context, S.restoreBad);
+                    return;
+                  } catch (e) {
+                    if (context.mounted) snack(context, '$e');
+                    return;
+                  }
+                  if (b == null || !context.mounted) return;
+                  final created = b.created.length >= 10 ? b.created.substring(0, 10) : b.created;
+                  final ok = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text(S.restore),
+                      content: Text('$created · ${b!.txCount} ${S.txs}\n\n${S.restoreConfirm}'),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text(S.cancel)),
+                        FilledButton(
+                          style: FilledButton.styleFrom(minimumSize: const Size(100, 44)),
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: const Text(S.yes),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (ok != true) return;
+                  await ref.read(repoProvider).restoreAll(b.tables);
+                  await n.importFrom(b.settings);
+                  ref.bump();
+                  if (context.mounted) snack(context, S.restoreDone);
+                },
               ),
             ]),
             _Group(S.data, [

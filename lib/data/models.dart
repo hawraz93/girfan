@@ -78,6 +78,10 @@ class Tx {
   final int? recurringId;
   final String? period; // yyyy-MM when generated from a recurring item
 
+  /// IQD per 1 USD when this was recorded, so later rate changes do not
+  /// rewrite history. Null on rows from before rates were stored.
+  final double? rate;
+
   const Tx({
     required this.id,
     required this.kind,
@@ -88,6 +92,7 @@ class Tx {
     this.note = '',
     this.recurringId,
     this.period,
+    this.rate,
   });
 
   bool get isExpense => kind == 'expense';
@@ -103,6 +108,7 @@ class Tx {
         note: (m['note'] as String?) ?? '',
         recurringId: m['recurring_id'] as int?,
         period: m['period'] as String?,
+        rate: (m['rate'] as num?)?.toDouble(),
       );
 
   Map<String, Object?> toMap() => {
@@ -114,6 +120,7 @@ class Tx {
         'note': note,
         'recurring_id': recurringId,
         'period': period,
+        'rate': rate,
       };
 }
 
@@ -356,5 +363,45 @@ class GoalDeposit {
         'goal_id': goalId,
         'amount': amount,
         'date': date,
+      };
+}
+
+/// A one-tap entry on the home screen: "نان 1,000", "بەنزین 10,000"...
+class QuickItem {
+  final int id;
+  final String name;
+  final double amount;
+  final String currency;
+  final int categoryId;
+  final String kind;
+  final int sort;
+
+  const QuickItem({
+    required this.id,
+    required this.name,
+    required this.amount,
+    required this.currency,
+    required this.categoryId,
+    this.kind = 'expense',
+    this.sort = 0,
+  });
+
+  factory QuickItem.fromMap(Map<String, Object?> m) => QuickItem(
+        id: m['id'] as int,
+        name: m['name'] as String,
+        amount: (m['amount'] as num).toDouble(),
+        currency: m['currency'] as String,
+        categoryId: m['category_id'] as int,
+        kind: (m['kind'] as String?) ?? 'expense',
+        sort: (m['sort'] as int?) ?? 0,
+      );
+
+  Map<String, Object?> toMap() => {
+        'name': name,
+        'amount': amount,
+        'currency': currency,
+        'category_id': categoryId,
+        'kind': kind,
+        'sort': sort,
       };
 }

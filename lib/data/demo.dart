@@ -215,4 +215,20 @@ Future<void> seedDemo(Repo repo) async {
     target: 1200000,
     currency: 'IQD',
   ));
+
+  // Quick buttons
+  for (final q in [
+    ['نان', 1000.0, 'خواردن'],
+    ['بەنزین', 10000.0, 'سەیارە'],
+    ['چای و قاوە', 2000.0, 'خواردن'],
+    ['کارتی مۆبایل', 5000.0, 'مۆبایل و ئینتەرنێت'],
+  ]) {
+    await repo.insertQuick(QuickItem(
+      id: 0,
+      name: q[0] as String,
+      amount: q[1] as double,
+      currency: 'IQD',
+      categoryId: id(q[2] as String, 'expense'),
+    ));
+  }
 }
