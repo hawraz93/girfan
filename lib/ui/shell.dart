@@ -1,21 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/strings.dart';
 import '../core/theme.dart';
+import '../state/providers.dart';
 import 'analytics/analytics_screen.dart';
 import 'home/home_screen.dart';
 import 'plans/plans_screen.dart';
 import 'settings/settings_screen.dart';
 import 'tx/tx_sheet.dart';
 
-class Shell extends StatefulWidget {
+class Shell extends ConsumerWidget {
   const Shell({super.key});
-  @override
-  State<Shell> createState() => _ShellState();
-}
-
-class _ShellState extends State<Shell> {
-  int _i = 0;
 
   static const _pages = [
     HomeScreen(),
@@ -25,13 +21,14 @@ class _ShellState extends State<Shell> {
   ];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final i = ref.watch(shellTabProvider);
     return Scaffold(
       extendBody: true,
-      body: IndexedStack(index: _i, children: _pages),
+      body: IndexedStack(index: i, children: _pages),
       bottomNavigationBar: _NavBar(
-        index: _i,
-        onTap: (i) => setState(() => _i = i),
+        index: i,
+        onTap: (t) => ref.read(shellTabProvider.notifier).state = t,
         onAdd: () => showTxSheet(context),
       ),
     );

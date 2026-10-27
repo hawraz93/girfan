@@ -30,6 +30,7 @@ class Settings {
   final ThemeMode themeMode;
   final String? pin;
   final String userName;
+  final MonthNames monthNames;
 
   const Settings({
     required this.baseCurrency,
@@ -37,6 +38,7 @@ class Settings {
     required this.themeMode,
     required this.pin,
     required this.userName,
+    this.monthNames = MonthNames.kurdish,
   });
 
   String get otherCurrency => baseCurrency == 'IQD' ? 'USD' : 'IQD';
@@ -54,6 +56,7 @@ class Settings {
     String? pin,
     bool clearPin = false,
     String? userName,
+    MonthNames? monthNames,
   }) =>
       Settings(
         baseCurrency: baseCurrency ?? this.baseCurrency,
@@ -61,6 +64,7 @@ class Settings {
         themeMode: themeMode ?? this.themeMode,
         pin: clearPin ? null : (pin ?? this.pin),
         userName: userName ?? this.userName,
+        monthNames: monthNames ?? this.monthNames,
       );
 }
 
@@ -68,13 +72,25 @@ class SettingsNotifier extends Notifier<Settings> {
   SharedPreferences get _p => ref.read(prefsProvider);
 
   @override
-  Settings build() => Settings(
-        baseCurrency: _p.getString('base') ?? 'IQD',
-        usdRate: _p.getDouble('usdRate') ?? 1500,
-        themeMode: ThemeMode.values[_p.getInt('theme') ?? 0],
-        pin: _p.getString('pin'),
-        userName: _p.getString('name') ?? '',
-      );
+  Settings build() {
+    final mi = _p.getInt('monthNames') ?? MonthNames.kurdish.index;
+    final names = MonthNames.values[mi.clamp(0, MonthNames.values.length - 1)];
+    monthNames = names;
+    return Settings(
+      baseCurrency: _p.getString('base') ?? 'IQD',
+      usdRate: _p.getDouble('usdRate') ?? 1500,
+      themeMode: ThemeMode.values[_p.getInt('theme') ?? 0],
+      pin: _p.getString('pin'),
+      userName: _p.getString('name') ?? '',
+      monthNames: names,
+    );
+  }
+
+  Future<void> setMonthNames(MonthNames m) async {
+    await _p.setInt('monthNames', m.index);
+    monthNames = m;
+    state = state.copyWith(monthNames: m);
+  }
 
   Future<void> setBase(String c) async {
     await _p.setString('base', c);
@@ -117,6 +133,9 @@ final unlockedProvider = StateProvider<bool>((_) => false);
 // ---------------------------------------------------------------------------
 
 final selectedMonthProvider = StateProvider<String>((_) => currentMonth());
+
+/// Bottom-nav tab, kept outside the widget so it survives a full rebuild.
+final shellTabProvider = StateProvider<int>((_) => 0);
 
 final categoriesProvider = FutureProvider<List<Category>>((ref) {
   ref.watch(dbTick);

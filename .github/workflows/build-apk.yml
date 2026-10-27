@@ -24,6 +24,7 @@ jobs:
     timeout-minutes: 30
     env:
       KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      RELEASES_TOKEN: ${{ secrets.RELEASES_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -71,7 +72,22 @@ jobs:
           EOF
 
       - name: Build APK
-        run: flutter build apk --release --build-number=${{ github.run_number }}
+        run: |
+          set -o pipefail
+          flutter build apk --release --build-number=${{ github.run_number }} 2>&1 | tee /tmp/build.log
+
+      # Failure logs go to the ci-logs branch so they can be read without
+      # downloading artifacts.
+      - name: Publish build log on failure
+        if: failure()
+        run: |
+          mkdir -p /tmp/logs && cd /tmp/logs
+          tail -n 300 /tmp/build.log > build-tail.log 2>/dev/null || echo "no log" > build-tail.log
+          git init -q -b ci-logs
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add . && git commit -q -m "Build log ${{ github.sha }}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-logs
 
       - name: Name the APK
         id: apk
@@ -99,3 +115,17 @@ jobs:
           body: |
             APK for ${{ github.sha }}.
             Download the .apk below on your phone and open it to install.
+
+      # The app checks this public repo for new versions (the code repo is
+      # private, so the app could not read its releases without a login).
+      - name: Publish to public releases repo
+        if: github.event_name != 'pull_request' && env.RELEASES_TOKEN != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          repository: ${{ github.repository_owner }}/girfan-releases
+          token: ${{ secrets.RELEASES_TOKEN }}
+          tag_name: ${{ steps.apk.outputs.tag }}
+          name: ${{ steps.apk.outputs.tag }}
+          files: ${{ steps.apk.outputs.file }}
+          make_latest: "true"
+          body: Girfan ${{ steps.apk.outputs.tag }}
