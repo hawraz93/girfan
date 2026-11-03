@@ -1,9 +1,14 @@
 import '../core/format.dart';
+import '../core/strings.dart';
 
 /// A category of spending, or a source of income (kind == 'income').
 class Category {
   final int id;
-  final String name;
+
+  /// As stored. Default categories are stored in Kurdish; [name] shows them
+  /// in the current language.
+  final String rawName;
+  String get name => localizeCategory(rawName);
   final String icon;
   final int color;
   final String kind; // 'expense' | 'income'
@@ -13,14 +18,14 @@ class Category {
 
   const Category({
     required this.id,
-    required this.name,
+    required String name,
     required this.icon,
     required this.color,
     required this.kind,
     this.budget,
     this.sort = 0,
     this.archived = false,
-  });
+  }) : rawName = name;
 
   bool get isExpense => kind == 'expense';
 
@@ -36,7 +41,7 @@ class Category {
       );
 
   Map<String, Object?> toMap() => {
-        'name': name,
+        'name': rawName,
         'icon': icon,
         'color': color,
         'kind': kind,
@@ -56,7 +61,7 @@ class Category {
   }) =>
       Category(
         id: id,
-        name: name ?? this.name,
+        name: name ?? rawName,
         icon: icon ?? this.icon,
         color: color ?? this.color,
         kind: kind,
@@ -141,6 +146,10 @@ class Recurring {
   /// 1 = every month, 2 = every two months, 12 = yearly...
   final int intervalMonths;
 
+  /// Installments paid before they were tracked in the app: the first
+  /// [prePaid] payments count as paid without a transaction.
+  final int prePaid;
+
   const Recurring({
     required this.id,
     required this.name,
@@ -154,6 +163,7 @@ class Recurring {
     this.note = '',
     this.active = true,
     this.intervalMonths = 1,
+    this.prePaid = 0,
   });
 
   bool get isExpense => kind == 'expense';
@@ -168,6 +178,40 @@ class Recurring {
   /// Total number of installments when the item has an end month.
   int? get totalInstallments =>
       endMonth == null ? null : installmentsBetween(startMonth, endMonth!, intervalMonths);
+
+  /// 0-based number of the payment that falls in [m] (only if [coversMonth]).
+  int installmentIndex(String m) => (monthsBetween(startMonth, m) - 1) ~/ intervalMonths;
+
+  bool isPrePaid(String m) => coversMonth(m) && installmentIndex(m) < prePaid;
+
+  /// Paid in month [m]: recorded in the app, or covered by [prePaid].
+  bool isPaid(String m, List<String> recorded) => isPrePaid(m) || recorded.contains(m);
+
+  /// Installments paid so far: pre-paid ones plus recorded ones in range.
+  int paidCount(List<String> recorded) {
+    final rec = recorded.where((m) => coversMonth(m) && !isPrePaid(m)).toSet().length;
+    final n = prePaid + rec;
+    final total = totalInstallments;
+    return total == null ? n : (n > total ? total : n);
+  }
+
+  /// Payment months before [current] that are neither pre-paid nor recorded.
+  int unrecordedBefore(String current, List<String> recorded) {
+    var n = 0;
+    for (var m = startMonth; m.compareTo(current) < 0; m = addMonths(m, 1)) {
+      if (endMonth != null && m.compareTo(endMonth!) > 0) break;
+      if (coversMonth(m) && !isPaid(m, recorded)) n++;
+    }
+    return n;
+  }
+
+  /// Payments that fall before [current] (used to suggest [prePaid]).
+  int dueBefore(String current) {
+    final last = addMonths(current, -1);
+    if (last.compareTo(startMonth) < 0) return 0;
+    final end = endMonth != null && endMonth!.compareTo(last) < 0 ? endMonth! : last;
+    return installmentsBetween(startMonth, end, intervalMonths);
+  }
 
   /// The first month on or after [from] in which a payment falls.
   String nextDueMonth(String from) {
@@ -190,6 +234,7 @@ class Recurring {
         note: (m['note'] as String?) ?? '',
         active: ((m['active'] as int?) ?? 1) == 1,
         intervalMonths: ((m['interval_months'] as int?) ?? 1).clamp(1, 12),
+        prePaid: (m['pre_paid'] as int?) ?? 0,
       );
 
   Map<String, Object?> toMap() => {
@@ -204,6 +249,7 @@ class Recurring {
         'note': note,
         'active': active ? 1 : 0,
         'interval_months': intervalMonths,
+        'pre_paid': prePaid,
       };
 }
 

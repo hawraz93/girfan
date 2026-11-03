@@ -22,7 +22,7 @@ class PlansScreen extends StatefulWidget {
 class _PlansScreenState extends State<PlansScreen> {
   int _tab = 0;
 
-  static const _titles = [S.recurring, S.debts, S.goalsTitle];
+  static List<String> get _titles => [S.recurring, S.debts, S.goalsTitle];
 
   void _add() {
     switch (_tab) {
@@ -57,7 +57,7 @@ class _PlansScreenState extends State<PlansScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: SegmentTabs(
-                labels: const [S.recurring, S.debts, S.goals],
+                labels: [S.recurring, S.debts, S.goals],
                 index: _tab,
                 onChanged: (i) => setState(() => _tab = i),
               ),

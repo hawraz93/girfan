@@ -1,5 +1,7 @@
 import 'package:intl/intl.dart';
 
+import 'strings.dart';
+
 /// How months are written across the app. Set from Settings at start-up and
 /// whenever the user changes it (the app tree is rebuilt on change).
 enum MonthNames { number, kurdish, arabic, english }
@@ -60,10 +62,18 @@ String monthNameShort(int m) => switch (monthNames) {
       MonthNames.english => englishMonthsShort[m - 1],
     };
 
-String weekdayName(int weekday) => switch (monthNames) {
-      MonthNames.arabic => arabicWeekdays[weekday - 1],
-      MonthNames.english => englishWeekdays[weekday - 1],
-      _ => kurdishWeekdays[weekday - 1],
+/// Weekdays follow the app language.
+String weekdayName(int weekday) => switch (appLang) {
+      AppLang.ar => arabicWeekdays[weekday - 1],
+      AppLang.en => englishWeekdays[weekday - 1],
+      AppLang.ku => kurdishWeekdays[weekday - 1],
+    };
+
+/// The month style that matches a language, used when the language changes.
+MonthNames monthNamesFor(AppLang l) => switch (l) {
+      AppLang.ku => MonthNames.kurdish,
+      AppLang.ar => MonthNames.arabic,
+      AppLang.en => MonthNames.english,
     };
 
 String two(int n) => n.toString().padLeft(2, '0');
@@ -81,6 +91,13 @@ String monthLabel(String key) {
   final d = monthFromKey(key);
   if (monthNames == MonthNames.number) return '${d.month} / ${d.year}';
   return '${d.month} · ${monthName(d.month)} ${d.year}';
+}
+
+/// Short form for tight places: "تشرینی دووەم 2026" -> "ت.دووەم 2026".
+String monthLabelShort(String key) {
+  final d = monthFromKey(key);
+  if (monthNames == MonthNames.number) return '${d.month} / ${d.year}';
+  return '${monthNameShort(d.month)} ${d.year}';
 }
 
 String monthShort(String key) {
@@ -123,8 +140,8 @@ String dateLabel(String key) {
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
   final diff = today.difference(DateTime(d.year, d.month, d.day)).inDays;
-  if (diff == 0) return 'ئەمڕۆ';
-  if (diff == 1) return 'دوێنێ';
+  if (diff == 0) return S.today;
+  if (diff == 1) return S.yesterday;
   final year = d.year == now.year ? '' : (monthNames == MonthNames.number ? '/${d.year}' : ' ${d.year}');
   if (monthNames == MonthNames.number) {
     return '${weekdayName(d.weekday)}، ${d.day}/${d.month}$year';
@@ -141,13 +158,16 @@ String shortDate(String key) {
 final _n0 = NumberFormat('#,##0', 'en');
 final _n2 = NumberFormat('#,##0.##', 'en');
 
-String currencySymbol(String cur) => cur == 'USD' ? r'$' : 'د.ع';
+/// Dinar sign: د.ع in Kurdish and Arabic, IQD in English.
+String get dinarSign => appLang == AppLang.en ? 'IQD' : 'د.ع';
+
+String currencySymbol(String cur) => cur == 'USD' ? r'$' : dinarSign;
 
 /// 450,000 د.ع  /  $120.5
 String money(double v, String cur) {
   // LRM keeps "$1,750" in reading order inside RTL sentences.
   if (cur == 'USD') return '‎\$${_n2.format(v)}‎';
-  return '${_n0.format(v)} د.ع';
+  return '${_n0.format(v)} $dinarSign';
 }
 
 /// Number only, without the currency suffix.
@@ -163,3 +183,6 @@ String moneyMulti(Map<String, double> totals, {String fallback = 'IQD'}) {
   ];
   return parts.isEmpty ? money(0, fallback) : parts.join(' + ');
 }
+
+/// "75٪" in Kurdish / Arabic, "75%" in English.
+String pct(num v) => appLang == AppLang.en ? '$v%' : '$v٪';

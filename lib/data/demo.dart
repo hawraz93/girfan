@@ -10,7 +10,7 @@ Future<void> seedDemo(Repo repo) async {
   if ((await repo.allTx()).isNotEmpty) return;
   final cats = await repo.categories();
   int id(String name, String kind) =>
-      cats.firstWhere((c) => c.name == name && c.kind == kind).id;
+      cats.firstWhere((c) => c.rawName == name && c.kind == kind).id;
 
   final now = DateTime.now();
   final thisMonth = monthKey(now);

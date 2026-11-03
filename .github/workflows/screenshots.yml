@@ -29,12 +29,18 @@ jobs:
       - run: flutter pub get
 
       - name: Render screenshots
-        run: flutter test test/screenshots_test.dart --update-goldens
+        run: |
+          set -o pipefail
+          flutter test test/screenshots_test.dart --update-goldens 2>&1 | tee /tmp/test.log
 
+      # Published even when the test fails, with the log, so failures can
+      # be read without downloading anything.
       - name: Publish to screenshots branch
+        if: always()
         run: |
           src="${{ github.head_ref || github.ref_name }}"
-          mkdir -p /tmp/shots && cp build/screenshots/*.png /tmp/shots/
+          mkdir -p /tmp/shots && cp build/screenshots/*.png /tmp/shots/ 2>/dev/null || true
+          tail -n 200 /tmp/test.log > /tmp/shots/test.log 2>/dev/null || true
           cd /tmp/shots
           git init -q -b screenshots
           git config user.name "github-actions"

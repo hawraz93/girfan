@@ -178,7 +178,14 @@ class Keypad extends StatelessWidget {
   final ValueChanged<String> onKey;
   final VoidCallback onBackspace;
   final String third;
-  const Keypad({super.key, required this.onKey, required this.onBackspace, this.third = '000'});
+  final double keyHeight;
+  const Keypad({
+    super.key,
+    required this.onKey,
+    required this.onBackspace,
+    this.third = '000',
+    this.keyHeight = 54,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -199,8 +206,10 @@ class Keypad extends StatelessWidget {
                 for (final k in r)
                   Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.all(4),
-                      child: k.isEmpty ? const SizedBox(height: 54) : _Key(k, onKey, onBackspace),
+                      padding: const EdgeInsets.all(3),
+                      child: k.isEmpty
+                          ? SizedBox(height: keyHeight)
+                          : _Key(k, onKey, onBackspace, keyHeight),
                     ),
                   ),
               ],
@@ -215,7 +224,8 @@ class _Key extends StatelessWidget {
   final String k;
   final ValueChanged<String> onKey;
   final VoidCallback onBackspace;
-  const _Key(this.k, this.onKey, this.onBackspace);
+  final double height;
+  const _Key(this.k, this.onKey, this.onBackspace, this.height);
 
   @override
   Widget build(BuildContext context) {
@@ -228,7 +238,7 @@ class _Key extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         onTap: isBack ? onBackspace : () => onKey(k),
         child: SizedBox(
-          height: 54,
+          height: height,
           child: Center(
             child: isBack
                 ? Icon(Icons.backspace_outlined, size: 22, color: p.muted)
@@ -363,9 +373,9 @@ Future<bool> confirmDelete(BuildContext context) async {
   final r = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: const Text(S.confirmDelete),
+      title: Text(S.confirmDelete),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text(S.cancel)),
+        TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(S.cancel)),
         FilledButton(
           style: FilledButton.styleFrom(
             backgroundColor: p.coral,
@@ -373,7 +383,7 @@ Future<bool> confirmDelete(BuildContext context) async {
             minimumSize: const Size(100, 44),
           ),
           onPressed: () => Navigator.pop(ctx, true),
-          child: const Text(S.delete),
+          child: Text(S.delete),
         ),
       ],
     ),
@@ -408,11 +418,11 @@ Future<String?> textPrompt(
         onSubmitted: (v) => Navigator.pop(ctx, v),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text(S.cancel)),
+        TextButton(onPressed: () => Navigator.pop(ctx), child: Text(S.cancel)),
         FilledButton(
           style: FilledButton.styleFrom(minimumSize: const Size(110, 44)),
           onPressed: () => Navigator.pop(ctx, ctrl.text),
-          child: const Text(S.save),
+          child: Text(S.save),
         ),
       ],
     ),
@@ -424,16 +434,16 @@ class AmountField extends StatelessWidget {
   final TextEditingController controller;
   final String currency;
   final VoidCallback onToggleCurrency;
-  final String label;
+  final String? label;
   final ValueChanged<String>? onChanged;
   final bool autofocus;
 
-  const AmountField({
+  AmountField({
     super.key,
     required this.controller,
     required this.currency,
     required this.onToggleCurrency,
-    this.label = S.amount,
+    this.label,
     this.onChanged,
     this.autofocus = false,
   });
@@ -448,7 +458,7 @@ class AmountField extends StatelessWidget {
       style: const TextStyle(fontFeatures: kTabular, fontWeight: FontWeight.w700, fontSize: 17),
       onChanged: onChanged,
       decoration: InputDecoration(
-        labelText: label,
+        labelText: label ?? S.amount,
         suffixIcon: TextButton(
           onPressed: onToggleCurrency,
           child: Text(currency, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),

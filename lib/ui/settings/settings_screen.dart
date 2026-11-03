@@ -30,6 +30,19 @@ class SettingsScreen extends ConsumerWidget {
           children: [
             Text(S.settings, style: context.tt.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(height: 18),
+            // Labels are in their own language so anyone can find theirs.
+            _Group('${S.language} · Language', [
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: _Segmented(
+                  options: const ['ku', 'ar', 'en'],
+                  labels: const ['کوردی', 'العربية', 'English'],
+                  value: s.language.name,
+                  expand: true,
+                  onChanged: (v) => n.setLanguage(AppLang.values.byName(v)),
+                ),
+              ),
+            ]),
             _Group(S.profile, [
               _Tile(
                 icon: Icons.person_outline_rounded,
@@ -47,7 +60,7 @@ class SettingsScreen extends ConsumerWidget {
                 title: S.baseCurrency,
                 trailing: _Segmented(
                   options: const ['IQD', 'USD'],
-                  labels: const ['دینار', 'دۆلار'],
+                  labels: [S.dinar, S.dollar],
                   value: s.baseCurrency,
                   onChanged: n.setBase,
                 ),
@@ -75,7 +88,7 @@ class SettingsScreen extends ConsumerWidget {
                 },
               ),
             ]),
-            _Group('${S.category} و ${S.source}', [
+            _Group(S.catsAndSources, [
               _Tile(
                 icon: Icons.grid_view_rounded,
                 title: S.categories,
@@ -118,7 +131,7 @@ class SettingsScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(12),
                 child: _Segmented(
                   options: const ['system', 'light', 'dark'],
-                  labels: const [S.themeSystem, S.themeLight, S.themeDark],
+                  labels: [S.themeSystem, S.themeLight, S.themeDark],
                   value: s.themeMode.name,
                   expand: true,
                   onChanged: (v) => n.setTheme(ThemeMode.values.byName(v)),
@@ -133,7 +146,7 @@ class SettingsScreen extends ConsumerWidget {
                   children: [
                     _Segmented(
                       options: const ['number', 'kurdish', 'arabic', 'english'],
-                      labels: const [S.msNumber, S.msKurdish, S.msArabic, 'English'],
+                      labels: [S.msNumber, S.msKurdish, S.msArabic, 'English'],
                       value: s.monthNames.name,
                       expand: true,
                       onChanged: (v) => n.setMonthNames(MonthNames.values.byName(v)),
@@ -183,14 +196,14 @@ class SettingsScreen extends ConsumerWidget {
                   final ok = await showDialog<bool>(
                     context: context,
                     builder: (ctx) => AlertDialog(
-                      title: const Text(S.restore),
+                      title: Text(S.restore),
                       content: Text('$created · ${b!.txCount} ${S.txs}\n\n${S.restoreConfirm}'),
                       actions: [
-                        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text(S.cancel)),
+                        TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(S.cancel)),
                         FilledButton(
                           style: FilledButton.styleFrom(minimumSize: const Size(100, 44)),
                           onPressed: () => Navigator.pop(ctx, true),
-                          child: const Text(S.yes),
+                          child: Text(S.yes),
                         ),
                       ],
                     ),

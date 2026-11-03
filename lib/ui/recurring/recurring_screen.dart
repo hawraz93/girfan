@@ -42,7 +42,7 @@ class RecurringTab extends ConsumerWidget {
             recs.when(
               data: (list) {
                 if (list.isEmpty) {
-                  return const EmptyState(
+                  return EmptyState(
                     icon: Icons.event_repeat_rounded,
                     title: S.noRecurring,
                     subtitle: S.noRecurringHint,
@@ -105,10 +105,10 @@ class _TotalsCard extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       child: Row(
         children: [
-          col('${S.expense} جێگیر · ${S.month}', exp, p.coral),
+          col(S.fixedExpenseMonth, exp, p.coral),
           Container(width: 1, height: 36, color: p.outline),
           const SizedBox(width: 16),
-          col('${S.income} جێگیر · ${S.month}', inc, p.mint),
+          col(S.fixedIncomeMonth, inc, p.mint),
         ],
       ),
     );
@@ -126,11 +126,14 @@ class _RecurringCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.p;
     final color = Color(cat?.color ?? 0xFF8A93A3);
-    final isPaid = paid.contains(month);
+    final isPaid = r.isPaid(month, paid);
     final covers = r.coversMonth(month);
     final total = r.totalInstallments;
-    final paidCount = paid.length;
+    final paidCount = r.paidCount(paid);
     final remainingCount = total == null ? null : math.max(0, total - paidCount);
+    final now = currentMonth();
+    final missing = total == null ? 0 : r.unrecordedBefore(now, paid);
+    final next = remainingCount == null || remainingCount == 0 ? null : r.nextDueMonth(now);
 
     return SoftCard(
       onTap: () => showRecurringSheet(context, existing: r),
@@ -185,14 +188,36 @@ class _RecurringCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 4),
-            Text('${monthLabel(r.startMonth)}  تا  ${monthLabel(r.endMonth!)}',
-                style: TextStyle(color: p.muted, fontSize: 11.5)),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(S.fromTo(monthLabel(r.startMonth), monthLabel(r.endMonth!)),
+                      style: TextStyle(color: p.muted, fontSize: 11.5)),
+                ),
+                if (next != null)
+                  Text('${S.nextInstallment}: ${monthLabel(next)}',
+                      style: TextStyle(color: p.muted, fontSize: 11.5, fontFeatures: kTabular)),
+              ],
+            ),
+            if (missing > 0) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(Icons.info_outline_rounded, size: 15, color: p.coral),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(S.unrecordedPast(missing),
+                        style: TextStyle(color: p.coral, fontSize: 12, fontWeight: FontWeight.w600)),
+                  ),
+                ],
+              ),
+            ],
           ] else
             Row(
               children: [
                 Icon(Icons.all_inclusive_rounded, size: 14, color: p.muted),
                 const SizedBox(width: 6),
-                Text('${S.ongoing} · لە ${monthLabel(r.startMonth)}',
+                Text('${S.ongoing} · ${S.since(monthLabel(r.startMonth))}',
                     style: TextStyle(color: p.muted, fontSize: 12)),
               ],
             ),

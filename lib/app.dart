@@ -20,9 +20,9 @@ class MasrufApp extends ConsumerWidget {
       theme: buildTheme(Brightness.light),
       darkTheme: buildTheme(Brightness.dark),
       themeMode: s.themeMode,
-      // Material has no Sorani locale; Arabic gives RTL widgets and digits
-      // layout while all visible text comes from S.
-      locale: const Locale('ar'),
+      // Material has no Sorani locale; Arabic gives RTL widgets for Kurdish
+      // while all visible text comes from S.
+      locale: Locale(s.language == AppLang.en ? 'en' : 'ar'),
       supportedLocales: const [Locale('ar'), Locale('en')],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
@@ -31,8 +31,8 @@ class MasrufApp extends ConsumerWidget {
       ],
       // Keyed on the month style so every date label redraws when it changes.
       builder: (context, child) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: KeyedSubtree(key: ValueKey(s.monthNames), child: child!),
+        textDirection: s.language == AppLang.en ? TextDirection.ltr : TextDirection.rtl,
+        child: KeyedSubtree(key: ValueKey('${s.language}-${s.monthNames}'), child: child!),
       ),
       home: const _Gate(),
     );

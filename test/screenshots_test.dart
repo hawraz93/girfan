@@ -89,7 +89,7 @@ void main() {
 
     await tester.tap(find.text(S.home));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.add_rounded).first);
+    await tester.tap(find.byKey(const Key('add-tx')));
     await tester.pumpAndSettle();
     Finder key(String k) =>
         find.descendant(of: find.byType(Keypad), matching: find.text(k));
@@ -100,7 +100,7 @@ void main() {
     await tester.tap(key('000'));
     await tester.pump();
     await shot(tester, '05-add-expense-dark');
-    await tester.tap(find.text(S.pickDate));
+    await tester.tap(find.byIcon(Icons.calendar_today_rounded));
     await tester.pumpAndSettle();
     await shot(tester, '05b-day-picker-dark');
     await tester.tap(find.text(S.cancel).last);
@@ -111,11 +111,35 @@ void main() {
     // Light theme
     await tester.tap(find.text(S.settings));
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text(S.themeLight));
+    await tester.pumpAndSettle();
     await tester.tap(find.text(S.themeLight));
     await tester.pumpAndSettle();
     await tester.tap(find.text(S.home));
     await shot(tester, '06-home-light');
     await tester.tap(find.text(S.analytics));
     await shot(tester, '07-analytics-light');
+
+    // English and Arabic (set through the provider; the selector itself
+    // is a plain segmented control at the top of Settings).
+    Future<void> lang(AppLang l) async {
+      final c = ProviderScope.containerOf(tester.element(find.byType(MaterialApp)));
+      await c.read(settingsProvider.notifier).setLanguage(l);
+      await tester.pumpAndSettle();
+    }
+
+    await lang(AppLang.en);
+    await tester.tap(find.text(S.home).last);
+    await shot(tester, '08-home-en');
+    await tester.tap(find.byKey(const Key('add-tx')));
+    await tester.pumpAndSettle();
+    await shot(tester, '09-add-en');
+    await tester.tap(find.byIcon(Icons.close_rounded));
+    await tester.pumpAndSettle();
+    await lang(AppLang.ar);
+    await tester.tap(find.text(S.plans).last);
+    await shot(tester, '10-recurring-ar');
+    await tester.tap(find.text(S.home).last);
+    await shot(tester, '11-home-ar');
   });
 }

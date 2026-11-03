@@ -133,8 +133,8 @@ class MonthPill extends ConsumerWidget {
             children: [
               Icon(Icons.calendar_month_rounded, size: 18, color: p.accent),
               const SizedBox(width: 8),
-              Text(monthLabel(m),
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5)),
+              Text(monthLabelShort(m),
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, fontFeatures: kTabular)),
               const SizedBox(width: 2),
               Icon(Icons.expand_more_rounded, size: 18, color: p.muted),
             ],
@@ -189,7 +189,7 @@ class CurrencySwitch extends ConsumerWidget {
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        children: [seg('IQD', 'د.ع'), seg('USD', r'$')],
+        children: [seg('IQD', dinarSign), seg('USD', r'$')],
       ),
     );
   }

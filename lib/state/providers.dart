@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/format.dart';
+import '../core/strings.dart';
 import '../data/models.dart';
 import '../data/repo.dart';
 
@@ -39,6 +40,8 @@ class Settings {
   /// On: everything is converted into [baseCurrency] at each entry's rate.
   final bool mergeCurrencies;
 
+  final AppLang language;
+
   const Settings({
     required this.baseCurrency,
     required this.usdRate,
@@ -48,6 +51,7 @@ class Settings {
     this.monthNames = MonthNames.kurdish,
     this.lastBackup,
     this.mergeCurrencies = false,
+    this.language = AppLang.ku,
   });
 
   /// Whether an entry in [currency] belongs in totals shown in [view].
@@ -98,6 +102,7 @@ class Settings {
     MonthNames? monthNames,
     String? lastBackup,
     bool? mergeCurrencies,
+    AppLang? language,
   }) =>
       Settings(
         baseCurrency: baseCurrency ?? this.baseCurrency,
@@ -108,6 +113,7 @@ class Settings {
         monthNames: monthNames ?? this.monthNames,
         lastBackup: lastBackup ?? this.lastBackup,
         mergeCurrencies: mergeCurrencies ?? this.mergeCurrencies,
+        language: language ?? this.language,
       );
 }
 
@@ -116,6 +122,9 @@ class SettingsNotifier extends Notifier<Settings> {
 
   @override
   Settings build() {
+    final li = _p.getInt('lang') ?? AppLang.ku.index;
+    final lang = AppLang.values[li.clamp(0, AppLang.values.length - 1)];
+    appLang = lang;
     final mi = _p.getInt('monthNames') ?? MonthNames.kurdish.index;
     final names = MonthNames.values[mi.clamp(0, MonthNames.values.length - 1)];
     monthNames = names;
@@ -128,7 +137,18 @@ class SettingsNotifier extends Notifier<Settings> {
       monthNames: names,
       lastBackup: _p.getString('lastBackup'),
       mergeCurrencies: _p.getBool('merge') ?? false,
+      language: lang,
     );
+  }
+
+  /// Switches the UI language; month names follow it (still changeable).
+  Future<void> setLanguage(AppLang l) async {
+    final m = monthNamesFor(l);
+    await _p.setInt('lang', l.index);
+    await _p.setInt('monthNames', m.index);
+    appLang = l;
+    monthNames = m;
+    state = state.copyWith(language: l, monthNames: m);
   }
 
   Future<void> setMerge(bool v) async {
@@ -150,6 +170,7 @@ class SettingsNotifier extends Notifier<Settings> {
         'monthNames': state.monthNames.index,
         'theme': state.themeMode.index,
         'merge': state.mergeCurrencies,
+        'lang': state.language.index,
       };
 
   Future<void> importFrom(Map<String, dynamic> m) async {
@@ -159,6 +180,7 @@ class SettingsNotifier extends Notifier<Settings> {
     if (m['monthNames'] is int) await _p.setInt('monthNames', m['monthNames'] as int);
     if (m['theme'] is int) await _p.setInt('theme', m['theme'] as int);
     if (m['merge'] is bool) await _p.setBool('merge', m['merge'] as bool);
+    if (m['lang'] is int) await _p.setInt('lang', m['lang'] as int);
     ref.invalidateSelf();
   }
 
@@ -457,7 +479,7 @@ final dueProvider = FutureProvider<List<DueItem>>((ref) async {
   return [
     for (final r in recs)
       if (r.coversMonth(month))
-        DueItem(r, byId[r.categoryId], (paid[r.id] ?? const []).contains(month)),
+        DueItem(r, byId[r.categoryId], r.isPaid(month, paid[r.id] ?? const [])),
   ];
 });
 

@@ -125,7 +125,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
             if (widget.setup)
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text(S.cancel),
+                child: Text(S.cancel),
               ),
             const SizedBox(height: 20),
           ],
