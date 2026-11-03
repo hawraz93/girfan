@@ -120,13 +120,15 @@ void main() {
     await tester.tap(find.text(S.analytics));
     await shot(tester, '07-analytics-light');
 
-    // English and Arabic
-    await tester.tap(find.text(S.settings));
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('English').first);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('English').first);
-    await tester.pumpAndSettle();
+    // English and Arabic (set through the provider; the selector itself
+    // is a plain segmented control at the top of Settings).
+    Future<void> lang(AppLang l) async {
+      final c = ProviderScope.containerOf(tester.element(find.byType(MaterialApp)));
+      await c.read(settingsProvider.notifier).setLanguage(l);
+      await tester.pumpAndSettle();
+    }
+
+    await lang(AppLang.en);
     await tester.tap(find.text(S.home));
     await shot(tester, '08-home-en');
     await tester.tap(find.byKey(const Key('add-tx')));
@@ -134,13 +136,10 @@ void main() {
     await shot(tester, '09-add-en');
     await tester.tap(find.byIcon(Icons.close_rounded));
     await tester.pumpAndSettle();
-    await tester.tap(find.text(S.settings));
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('العربية'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('العربية'));
-    await tester.pumpAndSettle();
+    await lang(AppLang.ar);
     await tester.tap(find.text(S.plans));
     await shot(tester, '10-recurring-ar');
+    await tester.tap(find.text(S.home));
+    await shot(tester, '11-home-ar');
   });
 }

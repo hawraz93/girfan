@@ -244,11 +244,14 @@ class _TxSheetState extends ConsumerState<TxSheet> {
     final dk = dateKey(date);
     final isOther = dk != today && dk != yesterday;
 
+    // The sheet is as tall as its content (up to [height]), so the keypad
+    // sits right under the fields with no empty gap.
     return Padding(
       padding: EdgeInsets.only(bottom: inset),
-      child: SizedBox(
-        height: height,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: height),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             const SheetHandle(),
             Padding(
@@ -281,7 +284,7 @@ class _TxSheetState extends ConsumerState<TxSheet> {
             ),
             // Everything above the keypad fits without scrolling on normal
             // phones; the scroll view only matters on very small screens.
-            Expanded(
+            Flexible(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
