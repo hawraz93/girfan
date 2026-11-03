@@ -129,7 +129,7 @@ void main() {
     }
 
     await lang(AppLang.en);
-    await tester.tap(find.text(S.home));
+    await tester.tap(find.text(S.home).last);
     await shot(tester, '08-home-en');
     await tester.tap(find.byKey(const Key('add-tx')));
     await tester.pumpAndSettle();
@@ -137,9 +137,9 @@ void main() {
     await tester.tap(find.byIcon(Icons.close_rounded));
     await tester.pumpAndSettle();
     await lang(AppLang.ar);
-    await tester.tap(find.text(S.plans));
+    await tester.tap(find.text(S.plans).last);
     await shot(tester, '10-recurring-ar');
-    await tester.tap(find.text(S.home));
+    await tester.tap(find.text(S.home).last);
     await shot(tester, '11-home-ar');
   });
 }
