@@ -279,21 +279,26 @@ class _TxSheetState extends ConsumerState<TxSheet> {
                 ],
               ),
             ),
+            // Everything above the keypad fits without scrolling on normal
+            // phones; the scroll view only matters on very small screens.
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (widget.fromRecurring == null && widget.existing == null)
-                      KindToggle(
-                        value: kind,
-                        onChanged: (k) => setState(() {
-                          kind = k;
-                          categoryId = null;
-                        }),
+                      SizedBox(
+                        height: 40,
+                        child: KindToggle(
+                          value: kind,
+                          onChanged: (k) => setState(() {
+                            kind = k;
+                            categoryId = null;
+                          }),
+                        ),
                       ),
-                    const SizedBox(height: 22),
+                    const SizedBox(height: 10),
                     // Amount
                     GestureDetector(
                       onTap: noteFocus.unfocus,
@@ -307,10 +312,10 @@ class _TxSheetState extends ConsumerState<TxSheet> {
                               child: Text(
                                 _display,
                                 style: TextStyle(
-                                  fontSize: 46,
+                                  fontSize: 40,
                                   fontWeight: FontWeight.w800,
-                                  letterSpacing: -1.5,
-                                  height: 1.1,
+                                  letterSpacing: -1.2,
+                                  height: 1.15,
                                   fontFeatures: kTabular,
                                   color: raw.isEmpty ? p.muted : (isExp ? p.text : p.mint),
                                 ),
@@ -321,29 +326,29 @@ class _TxSheetState extends ConsumerState<TxSheet> {
                           GestureDetector(
                             onTap: _toggleCurrency,
                             child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: p.surface2,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: p.outline),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: p.surface2,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: p.outline),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(currency,
+                                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                                  const SizedBox(width: 4),
+                                  Icon(Icons.swap_horiz_rounded, size: 16, color: p.muted),
+                                ],
+                              ),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(currency,
-                                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
-                                const SizedBox(width: 4),
-                                Icon(Icons.swap_horiz_rounded, size: 16, color: p.muted),
-                              ],
-                            ),
-                          ),
                           ),
                         ],
                       ),
                     ),
                     if (ref.watch(settingsProvider).mergeCurrencies &&
                         currency != ref.watch(settingsProvider).baseCurrency) ...[
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 6),
                       Center(
                         child: Pill(
                           icon: Icons.currency_exchange_rounded,
@@ -353,17 +358,66 @@ class _TxSheetState extends ConsumerState<TxSheet> {
                         ),
                       ),
                     ],
-                    const SizedBox(height: 22),
-                    Text(isExp ? S.category : S.source,
-                        style: TextStyle(color: p.muted, fontSize: 12.5, fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
+                    // Note + date on one line, right under the amount.
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: note,
+                            focusNode: noteFocus,
+                            textInputAction: TextInputAction.done,
+                            onSubmitted: (_) => noteFocus.unfocus(),
+                            decoration: InputDecoration(
+                              isDense: true,
+                              hintText: S.noteHint,
+                              contentPadding:
+                                  const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                              prefixIcon: Icon(Icons.notes_rounded, color: p.muted, size: 20),
+                              prefixIconConstraints: const BoxConstraints(minWidth: 40),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Material(
+                          color: isOther || dk == yesterday
+                              ? p.accent.withValues(alpha: 0.16)
+                              : p.surface2,
+                          borderRadius: BorderRadius.circular(16),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(16),
+                            onTap: _pickDate,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.calendar_today_rounded, size: 16, color: p.accent),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    dk == today
+                                        ? S.today
+                                        : dk == yesterday
+                                            ? S.yesterday
+                                            : shortDate(dk),
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w700, fontSize: 13, fontFeatures: kTabular),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
                     SizedBox(
-                      height: 88,
+                      height: 70,
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         clipBehavior: Clip.none,
                         itemCount: cats.length + 1,
-                        separatorBuilder: (_, __) => const SizedBox(width: 6),
+                        separatorBuilder: (_, __) => const SizedBox(width: 4),
                         itemBuilder: (_, i) => i == cats.length
                             ? _AddCatChip(onTap: () async {
                                 noteFocus.unfocus();
@@ -371,51 +425,16 @@ class _TxSheetState extends ConsumerState<TxSheet> {
                                 if (id != null && mounted) setState(() => categoryId = id);
                               })
                             : _CatChip(
-                          cats[i],
-                          selected: cats[i].id == effectiveCat,
-                          onTap: () {
-                            noteFocus.unfocus();
-                            setState(() => categoryId = cats[i].id);
-                          },
-                        ),
+                                cats[i],
+                                selected: cats[i].id == effectiveCat,
+                                onTap: () {
+                                  noteFocus.unfocus();
+                                  setState(() => categoryId = cats[i].id);
+                                },
+                              ),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Pill(
-                          label: S.today,
-                          selected: dk == today,
-                          onTap: () => setState(() => date = DateTime.now()),
-                        ),
-                        const SizedBox(width: 8),
-                        Pill(
-                          label: S.yesterday,
-                          selected: dk == yesterday,
-                          onTap: () => setState(
-                              () => date = DateTime.now().subtract(const Duration(days: 1))),
-                        ),
-                        const SizedBox(width: 8),
-                        Pill(
-                          label: isOther ? shortDate(dk) : S.pickDate,
-                          icon: Icons.calendar_today_rounded,
-                          selected: isOther,
-                          onTap: _pickDate,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: note,
-                      focusNode: noteFocus,
-                      textInputAction: TextInputAction.done,
-                      onSubmitted: (_) => noteFocus.unfocus(),
-                      decoration: InputDecoration(
-                        hintText: S.noteHint,
-                        prefixIcon: Icon(Icons.notes_rounded, color: p.muted, size: 20),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 4),
                   ],
                 ),
               ),
@@ -453,10 +472,11 @@ class _TxSheetState extends ConsumerState<TxSheet> {
                   onKey: _key,
                   onBackspace: _backspace,
                   third: currency == 'USD' ? '.' : '000',
+                  keyHeight: 48,
                 ),
               ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+              padding: const EdgeInsets.fromLTRB(20, 6, 20, 12),
               child: FilledButton(
                 onPressed: () => _save(cats),
                 child: Text(widget.existing != null
@@ -486,13 +506,13 @@ class _CatChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: SizedBox(
-        width: 70,
+        width: 64,
         child: Column(
           children: [
             AnimatedContainer(
               duration: const Duration(milliseconds: 180),
-              width: 50,
-              height: 50,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: selected ? color : color.withValues(alpha: 0.14),
@@ -500,9 +520,9 @@ class _CatChip extends StatelessWidget {
                     ? [BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 14, offset: const Offset(0, 5))]
                     : null,
               ),
-              child: Icon(catIcon(c.icon), color: selected ? const Color(0xFF14181F) : color, size: 23),
+              child: Icon(catIcon(c.icon), color: selected ? const Color(0xFF14181F) : color, size: 21),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 5),
             Text(
               c.name,
               maxLines: 1,
@@ -531,19 +551,19 @@ class _AddCatChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: SizedBox(
-        width: 70,
+        width: 64,
         child: Column(
           children: [
             Container(
-              width: 50,
-              height: 50,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(color: p.accent, width: 1.5),
               ),
               child: Icon(Icons.add_rounded, color: p.accent, size: 24),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 5),
             Text(S.newCategoryShort,
                 style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: p.accent)),
           ],

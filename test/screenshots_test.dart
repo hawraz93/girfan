@@ -89,7 +89,7 @@ void main() {
 
     await tester.tap(find.text(S.home));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.add_rounded).first);
+    await tester.tap(find.byKey(const Key('add-tx')));
     await tester.pumpAndSettle();
     Finder key(String k) =>
         find.descendant(of: find.byType(Keypad), matching: find.text(k));
@@ -111,11 +111,36 @@ void main() {
     // Light theme
     await tester.tap(find.text(S.settings));
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text(S.themeLight));
+    await tester.pumpAndSettle();
     await tester.tap(find.text(S.themeLight));
     await tester.pumpAndSettle();
     await tester.tap(find.text(S.home));
     await shot(tester, '06-home-light');
     await tester.tap(find.text(S.analytics));
     await shot(tester, '07-analytics-light');
+
+    // English and Arabic
+    await tester.tap(find.text(S.settings));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('English').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('English').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(S.home));
+    await shot(tester, '08-home-en');
+    await tester.tap(find.byKey(const Key('add-tx')));
+    await tester.pumpAndSettle();
+    await shot(tester, '09-add-en');
+    await tester.tap(find.byIcon(Icons.close_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(S.settings));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('العربية'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('العربية'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(S.plans));
+    await shot(tester, '10-recurring-ar');
   });
 }

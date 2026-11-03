@@ -24,7 +24,7 @@ class GoalsTab extends ConsumerWidget {
         goals.when(
           data: (list) {
             if (list.isEmpty) {
-              return const EmptyState(
+              return EmptyState(
                 icon: Icons.savings_outlined,
                 title: S.noGoals,
                 subtitle: S.noGoalsHint,
@@ -115,7 +115,7 @@ class _GoalCard extends StatelessWidget {
               if (v.reached)
                 StatusChip(S.reached, p.mint)
               else
-                Text('${(v.progress * 100).round()}٪',
+                Text(pct((v.progress * 100).round()),
                     style: TextStyle(
                         color: color, fontWeight: FontWeight.w800, fontSize: 15, fontFeatures: kTabular)),
             ],
@@ -130,7 +130,7 @@ class _GoalCard extends StatelessWidget {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    '${S.perMonth} ${money(perMonth, g.currency)} · تا ${monthLabel(g.deadline!)}',
+                    '${S.perMonth} ${money(perMonth, g.currency)} · ${S.until(monthLabel(g.deadline!))}',
                     style: TextStyle(color: p.muted, fontSize: 12, fontFeatures: kTabular),
                   ),
                 ),

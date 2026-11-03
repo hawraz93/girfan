@@ -298,7 +298,7 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Text('${(v.progress * 100).round()}٪',
+                      Text(pct((v.progress * 100).round()),
                           style: const TextStyle(fontWeight: FontWeight.w700, fontFeatures: kTabular)),
                       const Spacer(),
                       Text('${S.target}: ${money(g.target, g.currency)}',
@@ -314,7 +314,7 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                         style: TextStyle(color: p.muted, fontSize: 12.5, fontFeatures: kTabular)),
                     if (perMonth != null)
                       Text(
-                        '${S.perMonth}: ${money(perMonth, g.currency)} · تا ${monthLabel(g.deadline!)}',
+                        '${S.perMonth}: ${money(perMonth, g.currency)} · ${S.until(monthLabel(g.deadline!))}',
                         style: TextStyle(color: p.accent, fontSize: 12.5, fontWeight: FontWeight.w700),
                       ),
                   ],
@@ -323,7 +323,7 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
             ),
             const SizedBox(height: 16),
             SegmentTabs(
-              labels: const [S.deposit, S.withdraw],
+              labels: [S.deposit, S.withdraw],
               index: withdraw ? 1 : 0,
               colors: [p.mint, p.coral],
               onChanged: (i) => setState(() => withdraw = i == 1),
@@ -345,7 +345,7 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                   child: FilledButton(
                     style: FilledButton.styleFrom(minimumSize: const Size(90, 52)),
                     onPressed: () => _add(v),
-                    child: const Text(S.add),
+                    child: Text(S.add),
                   ),
                 ),
               ],

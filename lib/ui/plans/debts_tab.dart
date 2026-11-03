@@ -64,7 +64,7 @@ class DebtsTab extends ConsumerWidget {
         debts.when(
           data: (list) {
             if (list.isEmpty) {
-              return const EmptyState(
+              return EmptyState(
                 icon: Icons.handshake_outlined,
                 title: S.noDebts,
                 subtitle: S.noDebtsHint,

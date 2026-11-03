@@ -34,7 +34,14 @@ class QuickRow extends ConsumerWidget {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(
-        content: Text('${q.name} · ${money(q.amount, q.currency)} ${S.recorded}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('${q.name} · ${money(q.amount, q.currency)} ${S.recorded}'),
+            Text(S.quickHint, style: TextStyle(color: p.muted, fontSize: 11.5)),
+          ],
+        ),
         action: SnackBarAction(
           label: S.undo,
           textColor: p.accent,
@@ -52,51 +59,35 @@ class QuickRow extends ConsumerWidget {
     final items = ref.watch(quickProvider).valueOrNull ?? const <QuickItem>[];
     final cats = ref.watch(categoryMapProvider);
 
+    // One slim row of pills: tap records, hold edits, + adds.
     return Padding(
-      padding: const EdgeInsets.only(top: 18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.bolt_rounded, size: 18, color: p.accent),
-              const SizedBox(width: 4),
-              Text(S.quick, style: context.tt.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
-              const SizedBox(width: 8),
-              if (items.isNotEmpty)
-                Expanded(
-                  child: Text(S.quickHint,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: p.muted, fontSize: 11.5)),
-                ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 64,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              clipBehavior: Clip.none,
-              children: [
-                for (final q in items)
-                  Padding(
-                    padding: const EdgeInsetsDirectional.only(end: 8),
-                    child: _QuickChip(
-                      q: q,
-                      cat: cats[q.categoryId],
-                      onTap: () => _record(context, ref, q),
-                      onLongPress: () => showQuickSheet(context, existing: q),
-                    ),
-                  ),
-                _AddChip(
-                  label: items.isEmpty ? S.quickFirst : S.add,
-                  onTap: () => showQuickSheet(context),
-                ),
-              ],
+      padding: const EdgeInsets.only(top: 14),
+      child: SizedBox(
+        height: 38,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          clipBehavior: Clip.none,
+          children: [
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: 6),
+              child: Icon(Icons.bolt_rounded, size: 20, color: p.accent),
             ),
-          ),
-        ],
+            for (final q in items)
+              Padding(
+                padding: const EdgeInsetsDirectional.only(end: 6),
+                child: _QuickChip(
+                  q: q,
+                  cat: cats[q.categoryId],
+                  onTap: () => _record(context, ref, q),
+                  onLongPress: () => showQuickSheet(context, existing: q),
+                ),
+              ),
+            _AddChip(
+              label: items.isEmpty ? S.quickFirst : null,
+              onTap: () => showQuickSheet(context),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -112,36 +103,37 @@ class _QuickChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.p;
     final color = Color(cat?.color ?? 0xFF8A93A3);
-    return SoftCard(
-      radius: 18,
-      onTap: onTap,
-      onLongPress: onLongPress,
-      padding: const EdgeInsets.fromLTRB(10, 8, 14, 8),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          CircleIcon(catIcon(cat?.icon ?? 'more'), color, size: 38),
-          const SizedBox(width: 8),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Material(
+      color: p.surface,
+      shape: StadiumBorder(side: BorderSide(color: p.outline)),
+      child: InkWell(
+        customBorder: const StadiumBorder(),
+        onTap: onTap,
+        onLongPress: onLongPress,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Text(q.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-              Text(money(q.amount, q.currency),
+              Icon(catIcon(cat?.icon ?? 'more'), color: color, size: 16),
+              const SizedBox(width: 6),
+              Text(q.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5)),
+              const SizedBox(width: 6),
+              Text(moneyNumber(q.amount, q.currency),
                   style: TextStyle(
                       color: q.kind == 'expense' ? p.muted : p.mint,
-                      fontSize: 11.5,
+                      fontSize: 12,
                       fontFeatures: kTabular)),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
 class _AddChip extends StatelessWidget {
-  final String label;
+  final String? label;
   final VoidCallback onTap;
   const _AddChip({required this.label, required this.onTap});
 
@@ -149,19 +141,21 @@ class _AddChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.p;
     return Material(
-      color: p.accent.withValues(alpha: 0.10),
-      borderRadius: BorderRadius.circular(18),
+      color: p.accent.withValues(alpha: 0.12),
+      shape: const StadiumBorder(),
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        customBorder: const StadiumBorder(),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: EdgeInsets.symmetric(horizontal: label == null ? 9 : 12),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(Icons.add_rounded, color: p.accent, size: 20),
-              const SizedBox(width: 6),
-              Text(label, style: TextStyle(color: p.accent, fontWeight: FontWeight.w700)),
+              if (label != null) ...[
+                const SizedBox(width: 4),
+                Text(label!, style: TextStyle(color: p.accent, fontWeight: FontWeight.w700, fontSize: 12.5)),
+              ],
             ],
           ),
         ),

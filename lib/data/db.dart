@@ -28,17 +28,19 @@ class AppDb {
     }
     _db = await openDatabase(
       join(dir, 'masruf.db'),
-      version: 4,
+      version: 5,
       onCreate: (db, version) async {
         await _create(db, version);
         await _v2(db);
         await _v3(db);
         await _v4(db);
+        await _v5(db);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) await _v2(db);
         if (oldVersion < 3) await _v3(db);
         if (oldVersion < 4) await _v4(db);
+        if (oldVersion < 5) await _v5(db);
       },
     );
     return _db!;
@@ -155,6 +157,11 @@ class AppDb {
         sort INTEGER NOT NULL DEFAULT 0
       )
     ''');
+  }
+
+  /// v5: installments paid before they were tracked in the app.
+  static Future<void> _v5(Database db) async {
+    await db.execute('ALTER TABLE recurrings ADD COLUMN pre_paid INTEGER NOT NULL DEFAULT 0');
   }
 
   /// Table names in restore order.

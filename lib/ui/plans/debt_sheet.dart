@@ -128,7 +128,7 @@ class _DebtSheetState extends ConsumerState<DebtSheet> {
             ),
             const SizedBox(height: 8),
             SegmentTabs(
-              labels: const [S.iOweShort, S.lentShort],
+              labels: [S.iOweShort, S.lentShort],
               index: direction == 'owe' ? 0 : 1,
               colors: [p.coral, p.mint],
               onChanged: (i) => setState(() => direction = i == 0 ? 'owe' : 'lent'),
@@ -350,7 +350,7 @@ class _DebtDetailSheetState extends ConsumerState<DebtDetailSheet> {
                     child: FilledButton(
                       style: FilledButton.styleFrom(minimumSize: const Size(90, 52)),
                       onPressed: () => _addPayment(v),
-                      child: const Text(S.add),
+                      child: Text(S.add),
                     ),
                   ),
                 ],

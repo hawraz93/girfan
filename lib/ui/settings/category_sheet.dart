@@ -52,9 +52,12 @@ class _CategorySheetState extends ConsumerState<CategorySheet> {
   Future<void> _save() async {
     if (name.text.trim().isEmpty) return snack(context, '${S.name} ${S.required}');
     final b = double.tryParse(budget.text.replaceAll(',', ''));
+    final e = widget.existing;
+    final typed = name.text.trim();
     final c = Category(
-      id: widget.existing?.id ?? 0,
-      name: name.text.trim(),
+      id: e?.id ?? 0,
+      // Unchanged default names stay stored in Kurdish so they keep translating.
+      name: e != null && typed == e.name ? e.rawName : typed,
       icon: icon,
       color: color,
       kind: widget.kind,
@@ -120,7 +123,7 @@ class _CategorySheetState extends ConsumerState<CategorySheet> {
             TextField(
               controller: name,
               autofocus: widget.existing == null,
-              decoration: const InputDecoration(labelText: S.name),
+              decoration: InputDecoration(labelText: S.name),
             ),
             const SizedBox(height: 18),
             Text(S.color, style: TextStyle(color: p.muted, fontSize: 12.5, fontWeight: FontWeight.w700)),

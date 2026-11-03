@@ -121,7 +121,7 @@ class _UpdateSheetState extends State<UpdateSheet> {
             const SizedBox(height: 6),
             TextButton(
               onPressed: running ? null : () => Navigator.pop(context),
-              child: const Text(S.updLater),
+              child: Text(S.updLater),
             ),
           ],
         ),
@@ -149,7 +149,7 @@ class UpdateBanner extends ConsumerWidget {
           children: [
             Icon(Icons.system_update_rounded, color: p.accent),
             const SizedBox(width: 10),
-            const Expanded(
+            Expanded(
               child: Text(S.updTitle, style: TextStyle(fontWeight: FontWeight.w700)),
             ),
             Text(S.updNow, style: TextStyle(color: p.accent, fontWeight: FontWeight.w800)),

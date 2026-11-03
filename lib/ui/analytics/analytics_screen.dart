@@ -54,7 +54,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                 final items = kind == 'expense' ? sum.expenseByCat : sum.incomeByCat;
                 final total = kind == 'expense' ? sum.expense : sum.income;
                 if (items.isEmpty) {
-                  return const SoftCard(
+                  return SoftCard(
                     child: EmptyState(icon: Icons.pie_chart_outline_rounded, title: S.nothingHere),
                   );
                 }
@@ -65,7 +65,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
               error: (e, _) => Text('$e'),
             ),
             const SizedBox(height: 24),
-            const SectionHeader(S.last6),
+            SectionHeader(S.last6),
             series.when(
               data: (list) => _BarsCard(list, cur),
               loading: () => const SizedBox(height: 220),
@@ -159,7 +159,7 @@ class _Breakdown extends StatelessWidget {
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600)),
                             ),
-                            Text('${(e.total / total * 100).round()}٪',
+                            Text(pct((e.total / total * 100).round()),
                                 style: TextStyle(color: p.muted, fontSize: 12, fontFeatures: kTabular)),
                           ],
                         ),
@@ -191,9 +191,9 @@ class _CatRow extends StatelessWidget {
     final p = context.p;
     final color = Color(e.cat.color);
     final budget = isExpense ? e.cat.budget : null;
-    final pct = total == 0 ? 0.0 : e.total / total;
+    final share = total == 0 ? 0.0 : e.total / total;
     final over = budget != null && e.total > budget;
-    final progress = budget != null ? (e.total / budget).clamp(0.0, 1.0) : pct;
+    final progress = budget != null ? (e.total / budget).clamp(0.0, 1.0) : share;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Column(
@@ -224,7 +224,7 @@ class _CatRow extends StatelessWidget {
                   Text(money(e.total, cur),
                       style: const TextStyle(
                           fontWeight: FontWeight.w700, fontSize: 14, fontFeatures: kTabular)),
-                  Text('${(pct * 100).round()}٪',
+                  Text(pct((share * 100).round()),
                       style: TextStyle(color: p.muted, fontSize: 11.5, fontFeatures: kTabular)),
                 ],
               ),

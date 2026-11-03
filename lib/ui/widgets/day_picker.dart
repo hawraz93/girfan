@@ -40,10 +40,10 @@ class _DaySheetState extends State<_DaySheet> {
   static const _arabic = {6: 'س', 7: 'ح', 1: 'ن', 2: 'ث', 3: 'ر', 4: 'خ', 5: 'ج'};
   static const _english = {6: 'Sa', 7: 'Su', 1: 'Mo', 2: 'Tu', 3: 'We', 4: 'Th', 5: 'Fr'};
 
-  String _wd(int w) => switch (monthNames) {
-        MonthNames.arabic => _arabic[w]!,
-        MonthNames.english => _english[w]!,
-        _ => _kurdish[w]!,
+  String _wd(int w) => switch (appLang) {
+        AppLang.ar => _arabic[w]!,
+        AppLang.en => _english[w]!,
+        AppLang.ku => _kurdish[w]!,
       };
 
   bool _inRange(DateTime d) =>
@@ -158,7 +158,7 @@ class _DaySheetState extends State<_DaySheet> {
                 const Spacer(),
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text(S.cancel),
+                  child: Text(S.cancel),
                 ),
               ],
             ),

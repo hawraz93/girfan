@@ -55,7 +55,7 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
     final n = name.text;
     for (final e in _nameHints.entries) {
       if (e.value.any(n.contains)) {
-        final match = all.where((c) => c.kind == kind && !c.archived && c.name == e.key).firstOrNull;
+        final match = all.where((c) => c.kind == kind && !c.archived && c.rawName == e.key).firstOrNull;
         if (match != null) setState(() => categoryId = match.id);
         return;
       }
@@ -65,6 +65,7 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
   bool hasEnd = false;
   late String endMonth;
   int interval = 1;
+  int prePaid = 0;
 
   static const _intervals = [1, 2, 3, 6, 12];
 
@@ -86,6 +87,7 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
       hasEnd = e.endMonth != null;
       endMonth = e.endMonth ?? addMonths(e.startMonth, 11);
       interval = e.intervalMonths;
+      prePaid = e.prePaid;
     } else {
       kind = 'expense';
       currency = s.baseCurrency;
@@ -114,7 +116,7 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
     if (d < 1 || d > 31) return snack(context, '${S.dayOfMonth}: 1 - 31');
     if (catId == null) return snack(context, '${S.category} ${S.required}');
     if (hasEnd && endMonth.compareTo(startMonth) < 0) {
-      return snack(context, '${S.endMonth} پێش ${S.startMonth} نابێت');
+      return snack(context, S.endBeforeStart);
     }
     final r = Recurring(
       id: widget.existing?.id ?? 0,
@@ -128,6 +130,7 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
       endMonth: hasEnd ? endMonth : null,
       note: note.text.trim(),
       intervalMonths: interval,
+      prePaid: hasEnd ? prePaid.clamp(0, installmentsBetween(startMonth, endMonth, interval)) : 0,
     );
     final repo = ref.read(repoProvider);
     if (widget.existing != null) {
@@ -197,7 +200,7 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
               textInputAction: TextInputAction.next,
               onChanged: (_) => _suggestCategory(allCats),
               decoration: InputDecoration(
-                hintText: kind == 'expense' ? 'بۆ نموونە: کرێی خانوو' : 'بۆ نموونە: موچە',
+                hintText: kind == 'expense' ? S.recurringNameHintExp : S.recurringNameHintInc,
                 labelText: S.name,
                 prefixIcon: Icon(Icons.label_outline_rounded, color: p.muted, size: 20),
               ),
@@ -228,7 +231,7 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
                       LengthLimitingTextInputFormatter(2),
                     ],
                     style: const TextStyle(fontFeatures: kTabular, fontWeight: FontWeight.w700),
-                    decoration: const InputDecoration(labelText: S.dayOfMonth),
+                    decoration: InputDecoration(labelText: S.dayOfMonth),
                   ),
                 ),
               ],
@@ -283,7 +286,7 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
             ),
             const SizedBox(height: 16),
             _MonthField(
-              label: interval == 1 ? S.startMonth : '${S.startMonth} (یەکەم پارەدان)',
+              label: interval == 1 ? S.startMonth : '${S.startMonth} (${S.firstPayment})',
               value: startMonth,
               onTap: () async {
                 final r = await showMonthPicker(context, startMonth);
@@ -298,7 +301,7 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
                 onChanged: (v) => setState(() => hasEnd = v),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                title: const Text(S.hasEnd, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                title: Text(S.hasEnd, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
               ),
             ),
             if (hasEnd) ...[
@@ -322,6 +325,64 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
                   ),
                 ],
               ),
+              // Loans that started before using the app: how many were paid.
+              if (startMonth.compareTo(currentMonth()) < 0) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+                  decoration: BoxDecoration(color: p.surface2, borderRadius: BorderRadius.circular(16)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(S.prePaid,
+                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                                Text(S.prePaidHint, style: TextStyle(color: p.muted, fontSize: 11.5)),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: prePaid > 0 ? () => setState(() => prePaid--) : null,
+                            icon: const Icon(Icons.remove_circle_outline_rounded),
+                          ),
+                          Text('$prePaid',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w800, fontSize: 17, fontFeatures: kTabular)),
+                          IconButton(
+                            onPressed: prePaid < n ? () => setState(() => prePaid++) : null,
+                            icon: Icon(Icons.add_circle_outline_rounded, color: p.accent),
+                          ),
+                        ],
+                      ),
+                      Builder(builder: (_) {
+                        final past = Recurring(
+                          id: 0,
+                          name: '',
+                          amount: 0,
+                          currency: currency,
+                          categoryId: 0,
+                          kind: kind,
+                          dayOfMonth: 1,
+                          startMonth: startMonth,
+                          endMonth: endMonth,
+                          intervalMonths: interval,
+                        ).dueBefore(currentMonth());
+                        if (past == 0 || past == prePaid) return const SizedBox.shrink();
+                        return Pill(
+                          icon: Icons.history_rounded,
+                          label: '${S.prePaidAllPast} ($past)',
+                          onTap: () => setState(() => prePaid = past),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ],
             ],
             const SizedBox(height: 12),
             TextField(

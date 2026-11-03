@@ -38,7 +38,7 @@ class CategoriesScreen extends ConsumerWidget {
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
         children: [
           if (cats.isEmpty)
-            const EmptyState(icon: Icons.category_outlined, title: S.nothingHere)
+            EmptyState(icon: Icons.category_outlined, title: S.nothingHere)
           else
             SoftCard(
               padding: EdgeInsets.zero,
@@ -53,7 +53,7 @@ class CategoriesScreen extends ConsumerWidget {
             ),
           const SizedBox(height: 14),
           Text(
-            'دابگرە بۆ دەستکاری · درێژ دابگرە بۆ سڕینەوە',
+            S.categoriesHelp,
             textAlign: TextAlign.center,
             style: TextStyle(color: p.muted, fontSize: 12),
           ),

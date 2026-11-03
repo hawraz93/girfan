@@ -154,6 +154,7 @@ class _AddButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.p;
     return GestureDetector(
+      key: const Key('add-tx'),
       onTap: onTap,
       child: Container(
         width: 56,

@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -33,17 +31,15 @@ class HomeScreen extends ConsumerWidget {
       body: SafeArea(
         bottom: false,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 120),
           children: [
             _Header(name: s.userName),
-            const SizedBox(height: 18),
+            const SizedBox(height: 14),
             const UpdateBanner(),
-            const _BackupBanner(),
             summary.when(
               data: (sum) => HeroCard(sum: sum, settings: s)
-                  .animate(key: ValueKey(sum.month))
-                  .fadeIn(duration: 350.ms)
-                  .slideY(begin: 0.04, curve: Curves.easeOutCubic),
+                  .animate(key: ValueKey('${sum.month}-${sum.currency}'))
+                  .fadeIn(duration: 300.ms),
               loading: () => const _HeroSkeleton(),
               error: (e, _) => Text('$e'),
             ),
@@ -53,13 +49,15 @@ class HomeScreen extends ConsumerWidget {
                 final pending = items.where((d) => !d.paid).toList();
                 if (pending.isEmpty) return const SizedBox.shrink();
                 return Padding(
-                  padding: const EdgeInsets.only(top: 24),
+                  padding: const EdgeInsets.only(top: 16),
                   child: _DueSection(pending, month),
                 );
               },
               orElse: () => const SizedBox.shrink(),
             ),
-            const SizedBox(height: 24),
+            // Future ad slot (AdMob native ad) belongs here, between the
+            // summary area and the transaction list.
+            const SizedBox(height: 20),
             SectionHeader(
               S.transactions,
               trailing: txs.maybeWhen(
@@ -70,7 +68,7 @@ class HomeScreen extends ConsumerWidget {
             ),
             txs.when(
               data: (list) => list.isEmpty
-                  ? const EmptyState(
+                  ? EmptyState(
                       icon: Icons.receipt_long_outlined,
                       title: S.noTx,
                       subtitle: S.noTxHint,
@@ -86,52 +84,26 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-class _BackupBanner extends ConsumerWidget {
-  const _BackupBanner();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final due = ref.watch(backupDueProvider).valueOrNull ?? false;
-    if (!due) return const SizedBox.shrink();
-    final p = context.p;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: SoftCard(
-        color: p.coral.withValues(alpha: 0.10),
-        onTap: () async {
-          final n = ref.read(settingsProvider.notifier);
-          try {
-            if (await shareBackup(ref.read(repoProvider), n.exportable())) {
-              await n.markBackedUp();
-              if (context.mounted) snack(context, S.backupDone);
-            }
-          } catch (e) {
-            if (context.mounted) snack(context, '$e');
-          }
-        },
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: Row(
-          children: [
-            Icon(Icons.cloud_upload_outlined, color: p.coral),
-            const SizedBox(width: 10),
-            const Expanded(
-              child: Text(S.backupDue, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-            ),
-            Text(S.backupNow, style: TextStyle(color: p.coral, fontWeight: FontWeight.w800)),
-          ],
-        ),
-      ),
-    );
+Future<void> _backup(BuildContext context, WidgetRef ref) async {
+  final n = ref.read(settingsProvider.notifier);
+  try {
+    if (await shareBackup(ref.read(repoProvider), n.exportable())) {
+      await n.markBackedUp();
+      if (context.mounted) snack(context, S.backupDone);
+    }
+  } catch (e) {
+    if (context.mounted) snack(context, '$e');
   }
 }
 
-class _Header extends StatelessWidget {
+class _Header extends ConsumerWidget {
   final String name;
   const _Header({required this.name});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final p = context.p;
+    final backupDue = ref.watch(backupDueProvider).valueOrNull ?? false;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -140,15 +112,49 @@ class _Header extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                name.isEmpty ? S.greeting : '${S.greeting}، $name',
-                style: TextStyle(color: p.muted, fontSize: 13),
+                name.isEmpty ? S.greeting : S.greetingName(name),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: p.muted, fontSize: 12.5),
               ),
               Text(S.appName,
-                  style: context.tt.headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+                  style: context.tt.titleLarge?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.3)),
             ],
           ),
         ),
+        // Backup reminder: a small cloud with a red dot instead of a banner.
+        if (backupDue)
+          Tooltip(
+            message: S.backupDue,
+            child: Material(
+              color: p.coral.withValues(alpha: 0.12),
+              shape: const CircleBorder(),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: () => _backup(context, ref),
+                child: SizedBox(
+                  width: 40,
+                  height: 40,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Icon(Icons.cloud_upload_outlined, size: 21, color: p.coral),
+                      PositionedDirectional(
+                        top: 8,
+                        end: 8,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(color: p.coral, shape: BoxShape.circle),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        const SizedBox(width: 6),
         const CurrencySwitch(),
         const SizedBox(width: 6),
         const MonthPill(),
@@ -157,7 +163,8 @@ class _Header extends StatelessWidget {
   }
 }
 
-/// The always-dark balance card.
+/// The always-dark balance card: what is left, how much of income is spent,
+/// and income / expense. Category detail lives in Analytics.
 class HeroCard extends StatelessWidget {
   final MonthSummary sum;
   final Settings settings;
@@ -167,14 +174,13 @@ class HeroCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.p;
     final cur = sum.currency;
-    final top = sum.expenseByCat.take(5).toList();
-    final other = sum.expense - top.fold(0.0, (a, b) => a + b.total);
     final negative = sum.net < 0;
+    final ratio = sum.income > 0 ? sum.expense / sum.income : 0.0;
 
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(24),
         gradient: LinearGradient(
           begin: AlignmentDirectional.topStart,
           end: AlignmentDirectional.bottomEnd,
@@ -182,37 +188,50 @@ class HeroCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.28),
-            blurRadius: 30,
-            offset: const Offset(0, 14),
+            color: Colors.black.withValues(alpha: 0.22),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
       child: Stack(
         children: [
           PositionedDirectional(
-            end: -60,
-            top: -70,
+            end: -50,
+            top: -60,
             child: Container(
-              width: 220,
-              height: 220,
+              width: 180,
+              height: 180,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(colors: [
-                  Palette.heroAccent.withValues(alpha: 0.32),
+                  Palette.heroAccent.withValues(alpha: 0.28),
                   Palette.heroAccent.withValues(alpha: 0),
                 ]),
               ),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(22),
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${S.remainingOf} ${monthLabel(sum.month)}',
-                    style: const TextStyle(color: Palette.heroMuted, fontSize: 13)),
-                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text('${S.remainingOf} ${monthLabel(sum.month)}',
+                          style: const TextStyle(color: Palette.heroMuted, fontSize: 12.5)),
+                    ),
+                    if (sum.saved != 0) ...[
+                      const Icon(Icons.savings_rounded, size: 13, color: Palette.heroMint),
+                      const SizedBox(width: 4),
+                      Text(money(sum.saved, cur),
+                          style: const TextStyle(
+                              color: Palette.heroMint, fontSize: 11.5, fontFeatures: kTabular)),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 2),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,
@@ -225,43 +244,43 @@ class HeroCard extends StatelessWidget {
                           moneyNumber(sum.net, cur),
                           style: TextStyle(
                             color: negative ? Palette.heroCoral : Palette.heroText,
-                            fontSize: 40,
+                            fontSize: 34,
                             fontWeight: FontWeight.w800,
-                            letterSpacing: -1.2,
-                            height: 1.1,
+                            letterSpacing: -1,
+                            height: 1.15,
                             fontFeatures: kTabular,
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     Text(currencySymbol(cur),
                         style: const TextStyle(
-                            color: Palette.heroMuted, fontSize: 16, fontWeight: FontWeight.w600)),
+                            color: Palette.heroMuted, fontSize: 14, fontWeight: FontWeight.w600)),
                   ],
                 ),
-                if (sum.income > 0)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: Text(
-                      '${(sum.expense / sum.income * 100).round()}٪ ${S.ofIncome} خەرج کراوە',
-                      style: const TextStyle(color: Palette.heroMuted, fontSize: 12),
-                    ),
+                if (sum.income > 0) ...[
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: ratio.clamp(0.0, 1.0),
+                            minHeight: 6,
+                            backgroundColor: Colors.white.withValues(alpha: 0.10),
+                            color: ratio > 0.9 ? Palette.heroCoral : Palette.heroMint,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(S.spentOfIncome((ratio * 100).round()),
+                          style: const TextStyle(color: Palette.heroMuted, fontSize: 11.5)),
+                    ],
                   ),
-                if (sum.saved != 0)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.savings_rounded, size: 13, color: Palette.heroMint),
-                        const SizedBox(width: 5),
-                        Text('${S.saved}: ${money(sum.saved, cur)}',
-                            style: const TextStyle(
-                                color: Palette.heroMint, fontSize: 12, fontFeatures: kTabular)),
-                      ],
-                    ),
-                  ),
-                const SizedBox(height: 18),
+                ],
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
@@ -272,7 +291,12 @@ class HeroCard extends StatelessWidget {
                         value: money(sum.income, cur),
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    Container(
+                      width: 1,
+                      height: 28,
+                      margin: const EdgeInsets.symmetric(horizontal: 10),
+                      color: Colors.white.withValues(alpha: 0.10),
+                    ),
                     Expanded(
                       child: _Stat(
                         icon: Icons.arrow_upward_rounded,
@@ -283,42 +307,6 @@ class HeroCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                if (sum.expense > 0) ...[
-                  const SizedBox(height: 18),
-                  _StripeBar(top: top, other: other, total: sum.expense),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 14,
-                    runSpacing: 6,
-                    children: [
-                      for (final e in top.take(3))
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                  color: Color(e.cat.color), shape: BoxShape.circle),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(e.cat.name,
-                                style: const TextStyle(color: Palette.heroMuted, fontSize: 11.5)),
-                          ],
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      const Icon(Icons.speed_rounded, size: 14, color: Palette.heroMuted),
-                      const SizedBox(width: 6),
-                      Text('${S.avgPerDay}: ${money(sum.avgPerDay, cur)}',
-                          style: const TextStyle(
-                              color: Palette.heroMuted, fontSize: 12, fontFeatures: kTabular)),
-                    ],
-                  ),
-                ],
               ],
             ),
           ),
@@ -336,75 +324,36 @@ class _Stat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.18), shape: BoxShape.circle),
-            child: Icon(icon, color: color, size: 16),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: const TextStyle(color: Palette.heroMuted, fontSize: 11)),
-                Text(value,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+    return Row(
+      children: [
+        Container(
+          width: 26,
+          height: 26,
+          decoration: BoxDecoration(color: color.withValues(alpha: 0.18), shape: BoxShape.circle),
+          child: Icon(icon, color: color, size: 14),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: const TextStyle(color: Palette.heroMuted, fontSize: 11)),
+              // Scales down instead of cutting the number off.
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: AlignmentDirectional.centerStart,
+                child: Text(value,
                     style: const TextStyle(
                       color: Palette.heroText,
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                       fontFeatures: kTabular,
                     )),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StripeBar extends StatelessWidget {
-  final List<CatTotal> top;
-  final double other, total;
-  const _StripeBar({required this.top, required this.other, required this.total});
-
-  int _flex(double v) => math.max(1, (v * 1000 / total).round());
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(5),
-      child: SizedBox(
-        height: 10,
-        child: Row(
-          children: [
-            for (final e in top)
-              Expanded(
-                flex: _flex(e.total),
-                child: Container(
-                  margin: const EdgeInsetsDirectional.only(end: 2),
-                  color: Color(e.cat.color),
-                ),
-              ),
-            if (other > 0)
-              Expanded(
-                flex: _flex(other),
-                child: Container(color: Palette.heroMuted.withValues(alpha: 0.5)),
-              ),
-          ],
         ),
-      ),
+      ],
     );
   }
 }
@@ -413,108 +362,118 @@ class _HeroSkeleton extends StatelessWidget {
   const _HeroSkeleton();
   @override
   Widget build(BuildContext context) => Container(
-        height: 240,
+        height: 170,
         decoration: BoxDecoration(
           color: context.p.surface2,
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(24),
         ),
       );
 }
 
-class _DueSection extends StatelessWidget {
+/// Fixed items still to pay this month, as a short list (3 shown, rest
+/// behind "more").
+class _DueSection extends StatefulWidget {
   final List<DueItem> items;
   final String month;
   const _DueSection(this.items, this.month);
 
   @override
+  State<_DueSection> createState() => _DueSectionState();
+}
+
+class _DueSectionState extends State<_DueSection> {
+  bool expanded = false;
+
+  @override
   Widget build(BuildContext context) {
     final p = context.p;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SectionHeader(
-          S.dueThisMonth,
-          trailing: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2),
-            decoration: BoxDecoration(
-              color: p.accent.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(10),
+    final items = widget.items;
+    final shown = expanded ? items : items.take(3).toList();
+    return SoftCard(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Text(S.dueThisMonth, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+                decoration: BoxDecoration(
+                  color: p.accent.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text('${items.length}',
+                    style: TextStyle(
+                        color: p.accent, fontWeight: FontWeight.w800, fontSize: 12, fontFeatures: kTabular)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          for (final d in shown) _DueRow(d, widget.month),
+          if (items.length > 3)
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: TextButton(
+                onPressed: () => setState(() => expanded = !expanded),
+                child: Text(expanded ? S.showLess : S.moreCount(items.length - 3)),
+              ),
             ),
-            child: Text('${items.length}',
-                style: TextStyle(
-                    color: p.accent, fontWeight: FontWeight.w800, fontSize: 12, fontFeatures: kTabular)),
-          ),
-        ),
-        SizedBox(
-          height: 132,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            clipBehavior: Clip.none,
-            itemCount: items.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
-            itemBuilder: (_, i) => _DueCard(items[i], month),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
 
-class _DueCard extends StatelessWidget {
+class _DueRow extends StatelessWidget {
   final DueItem d;
   final String month;
-  const _DueCard(this.d, this.month);
+  const _DueRow(this.d, this.month);
 
   @override
   Widget build(BuildContext context) {
     final p = context.p;
     final r = d.recurring;
     final color = Color(d.category?.color ?? 0xFF8A93A3);
-    return SizedBox(
-      width: 196,
-      child: SoftCard(
-        padding: const EdgeInsets.all(14),
-        onTap: () => showTxSheet(context, fromRecurring: r, period: month),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () => showTxSheet(context, fromRecurring: r, period: month),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 7),
+        child: Row(
           children: [
-            Row(
-              children: [
-                CircleIcon(catIcon(d.category?.icon ?? 'more'), color, size: 34),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(r.name,
+            CircleIcon(catIcon(d.category?.icon ?? 'more'), color, size: 32),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(r.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-                ),
-              ],
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5)),
+                  Text('${S.dayOfMonth} ${r.dayOfMonth}',
+                      style: TextStyle(color: p.muted, fontSize: 11.5, fontFeatures: kTabular)),
+                ],
+              ),
             ),
-            const Spacer(),
             Text(money(r.amount, r.currency),
-                style: const TextStyle(
-                    fontWeight: FontWeight.w800, fontSize: 16.5, fontFeatures: kTabular)),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Text('${S.dayOfMonth} ${r.dayOfMonth}',
-                    style: TextStyle(color: p.muted, fontSize: 12, fontFeatures: kTabular)),
-                const Spacer(),
-                Material(
-                  color: p.accent,
-                  borderRadius: BorderRadius.circular(12),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () => showTxSheet(context, fromRecurring: r, period: month),
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      child: Text(S.record,
-                          style: TextStyle(
-                              fontSize: 12, fontWeight: FontWeight.w800, color: Palette.onAccent)),
-                    ),
-                  ),
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5, fontFeatures: kTabular)),
+            const SizedBox(width: 10),
+            Material(
+              color: p.accent,
+              borderRadius: BorderRadius.circular(10),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(10),
+                onTap: () => showTxSheet(context, fromRecurring: r, period: month),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  child: Text(S.record,
+                      style: const TextStyle(
+                          fontSize: 11.5, fontWeight: FontWeight.w800, color: Palette.onAccent)),
                 ),
-              ],
+              ),
             ),
           ],
         ),
